@@ -8,8 +8,7 @@ using System.Threading.Tasks;
 namespace YoutubeDLSharp.Helpers
 {
     internal static class OSHelper
-    {
-        public static bool IsWindows { get => GetOSVersion() == OSVersion.Windows; }
+    {       
 
         /// <summary>
         /// Gets the <see cref="OSVersion"/> depending on what platform you are on
@@ -18,9 +17,6 @@ namespace YoutubeDLSharp.Helpers
         /// <exception cref="Exception"></exception>
         internal static OSVersion GetOSVersion()
         {
-#if NET45
-            return OSVersion.Windows;
-#else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 return OSVersion.Windows;
@@ -34,7 +30,6 @@ namespace YoutubeDLSharp.Helpers
                 return OSVersion.Linux;
             }
             else { throw new Exception("Your OS isn't supported"); }
-#endif
         }
     }
     internal enum OSVersion

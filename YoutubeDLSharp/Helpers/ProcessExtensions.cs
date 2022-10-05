@@ -22,7 +22,7 @@ namespace YoutubeDLSharp.Helpers
         public static void KillTree(this Process process, TimeSpan timeout)
         {
             string stdout;
-            if (OSHelper.IsWindows)
+            if (OSHelper.GetOSVersion() == OSVersion.Windows)
             {
                 RunProcessAndWaitForExit(
                     "taskkill",
