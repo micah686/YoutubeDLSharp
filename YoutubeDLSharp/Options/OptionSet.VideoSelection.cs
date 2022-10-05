@@ -8,25 +8,37 @@ namespace YoutubeDLSharp.Options
 {
     public partial class OptionSet
     {
-        private Option<int?> playlistStart = new Option<int?>("--playlist-start");
-        private Option<int?> playlistEnd = new Option<int?>("--playlist-end");
         private Option<string> playlistItems = new Option<string>("--playlist-items");
-        private Option<string> matchTitle = new Option<string>("--match-title");
-        private Option<string> rejectTitle = new Option<string>("--reject-title");
-        private Option<int?> maxDownloads = new Option<int?>("--max-downloads");
         private Option<string> minFilesize = new Option<string>("--min-filesize");
         private Option<string> maxFilesize = new Option<string>("--max-filesize");
         private Option<DateTime> date = new Option<DateTime>("--date");
         private Option<DateTime> datebefore = new Option<DateTime>("--datebefore");
         private Option<DateTime> dateafter = new Option<DateTime>("--dateafter");
-        private Option<long?> minViews = new Option<long?>("--min-views");
-        private Option<long?> maxViews = new Option<long?>("--max-views");
         private Option<string> matchFilter = new Option<string>("--match-filter");
+        //no match filter
         private Option<bool> noPlaylist = new Option<bool>("--no-playlist");
         private Option<bool> yesPlaylist = new Option<bool>("--yes-playlist");
         private Option<byte?> ageLimit = new Option<byte?>("--age-limit");
         private Option<string> downloadArchive = new Option<string>("--download-archive");
+        //no download archive
+        private Option<int?> maxDownloads = new Option<int?>("--max-downloads");
+        //break on existing
+        //break on reject
+        //break per input
+        //no break per input
+        //skip playlist after errors
+
+
+        //
+        private Option<int?> playlistStart = new Option<int?>("--playlist-start");
+        private Option<int?> playlistEnd = new Option<int?>("--playlist-end");       
+        private Option<string> matchTitle = new Option<string>("--match-title");
+        private Option<string> rejectTitle = new Option<string>("--reject-title");
+        private Option<long?> minViews = new Option<long?>("--min-views");
+        private Option<long?> maxViews = new Option<long?>("--max-views");
         private Option<bool> includeAds = new Option<bool>("--include-ads");
+        //
+
 
         /// <summary>
         /// Playlist video to start at (default is

@@ -9,19 +9,28 @@ namespace YoutubeDLSharp.Options
         private Option<bool> help = new Option<bool>("-h", "--help");
         private Option<bool> version = new Option<bool>("--version");
         private Option<bool> update = new Option<bool>("-U", "--update");
+        //no-update
         private Option<bool> ignoreErrors = new Option<bool>("-i", "--ignore-errors");
+        //no abort on error
         private Option<bool> abortOnError = new Option<bool>("--abort-on-error");
         private Option<bool> dumpUserAgent = new Option<bool>("--dump-user-agent");
         private Option<bool> listExtractors = new Option<bool>("--list-extractors");
         private Option<bool> extractorDescriptions = new Option<bool>("--extractor-descriptions");
-        private Option<bool> forceGenericExtractor = new Option<bool>("--force-generic-extractor");
+        //use extractors
+        //private Option<bool> forceGenericExtractor = new Option<bool>("--force-generic-extractor");
         private Option<string> defaultSearch = new Option<string>("--default-search");
         private Option<bool> ignoreConfig = new Option<bool>("--ignore-config");
+        //no config locations
         private Option<string> configLocation = new Option<string>("--config-location");
         private Option<bool> flatPlaylist = new Option<bool>("--flat-playlist");
+        //no flat playlist
+        //live from start
+        //no live from start
         private Option<bool> markWatched = new Option<bool>("--mark-watched");
         private Option<bool> noMarkWatched = new Option<bool>("--no-mark-watched");
         private Option<bool> noColor = new Option<bool>("--no-color");
+        //compat options
+        //alias
 
         /// <summary>
         /// Print this help text and exit

@@ -7,14 +7,18 @@ namespace YoutubeDLSharp.Options
     public partial class OptionSet
     {
         private Option<string> encoding = new Option<string>("--encoding");
+        //legacy server connect
         private Option<bool> noCheckCertificate = new Option<bool>("--no-check-certificate");
         private Option<bool> preferInsecure = new Option<bool>("--prefer-insecure");
-        private Option<string> userAgent = new Option<string>("--user-agent");
-        private Option<string> referer = new Option<string>("--referer");
+        //private Option<string> userAgent = new Option<string>("--user-agent");
+        //private Option<string> referer = new Option<string>("--referer");
         private Option<string> addHeader = new Option<string>("--add-header");
         private Option<bool> bidiWorkaround = new Option<bool>("--bidi-workaround");
+        //sleep requests
         private Option<int?> sleepInterval = new Option<int?>("--sleep-interval");
         private Option<int?> maxSleepInterval = new Option<int?>("--max-sleep-interval");
+        //sleep subtitles
+
 
         /// <summary>
         /// Force the specified encoding

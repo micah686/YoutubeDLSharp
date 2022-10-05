@@ -10,7 +10,11 @@ namespace YoutubeDLSharp.Options
         private Option<string> password = new Option<string>("-p", "--password");
         private Option<string> twofactor = new Option<string>("-2", "--twofactor");
         private Option<bool> netrc = new Option<bool>("-n", "--netrc");
+        //netrc location
         private Option<string> videoPassword = new Option<string>("--video-password");
+        //client certificate
+        //client certificate key
+        //client cert password
 
         /// <summary>
         /// Login with this account ID

@@ -7,6 +7,7 @@ namespace YoutubeDLSharp.Options
     public partial class OptionSet
     {
         private Option<bool> writeThumbnail = new Option<bool>("--write-thumbnail");
+        //no write thumbnail
         private Option<bool> writeAllThumbnails = new Option<bool>("--write-all-thumbnails");
         private Option<bool> listThumbnails = new Option<bool>("--list-thumbnails");
 

@@ -9,21 +9,48 @@ namespace YoutubeDLSharp.Options
         private Option<bool> extractAudio = new Option<bool>("-x", "--extract-audio");
         private Option<AudioConversionFormat> audioFormat = new Option<AudioConversionFormat>("--audio-format");
         private Option<byte?> audioQuality = new Option<byte?>("--audio-quality");
+        //remux video
         private Option<VideoRecodeFormat> recodeVideo = new Option<VideoRecodeFormat>("--recode-video");
         private Option<string> postprocessorArgs = new Option<string>("--postprocessor-args");
         private Option<bool> keepVideo = new Option<bool>("-k", "--keep-video");
+        //no keep video
+        //post overwrites
         private Option<bool> noPostOverwrites = new Option<bool>("--no-post-overwrites");
         private Option<bool> embedSubs = new Option<bool>("--embed-subs");
+        //no embed subs
         private Option<bool> embedThumbnail = new Option<bool>("--embed-thumbnail");
-        private Option<bool> addMetadata = new Option<bool>("--add-metadata");
-        private Option<string> metadataFromTitle = new Option<string>("--metadata-from-title");
+        //no embed thumbnail
+        //private Option<bool> addMetadata = new Option<bool>("--add-metadata");
+        //embed metadata
+        //no embed metadata
+        //embed chapters
+        //no embed chapters
+        //embed info json
+        //no embed info json
+        //parse metadata
+        //replace in metadata
         private Option<bool> xattrs = new Option<bool>("--xattrs");
+        //concat playlist
         private Option<string> fixup = new Option<string>("--fixup");
-        private Option<bool> preferAvconv = new Option<bool>("--prefer-avconv");
-        private Option<bool> preferFfmpeg = new Option<bool>("--prefer-ffmpeg");
         private Option<string> ffmpegLocation = new Option<string>("--ffmpeg-location");
         private Option<string> exec = new Option<string>("--exec");
+        //no exec
         private Option<string> convertSubs = new Option<string>("--convert-subs");
+        //convert thumbnails
+        //split chapters
+        //no split chapters
+        //remove chapters
+        //no remove chapters
+        //force keyframes at cuts
+        //no force keyframes at cuts
+        //use postprocessor
+
+
+        //private Option<string> metadataFromTitle = new Option<string>("--metadata-from-title");                
+        //private Option<bool> preferAvconv = new Option<bool>("--prefer-avconv");
+        //private Option<bool> preferFfmpeg = new Option<bool>("--prefer-ffmpeg");
+        
+        
 
         /// <summary>
         /// Convert video files to audio-only files

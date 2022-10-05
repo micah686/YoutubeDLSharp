@@ -7,21 +7,41 @@ namespace YoutubeDLSharp.Options
     public partial class OptionSet
     {
         private Option<string> batchFile = new Option<string>("-a", "--batch-file");
-        private Option<bool> id = new Option<bool>("--id");
+        //no batch file
+        //paths
+        //private Option<bool> id = new Option<bool>("--id");
         private Option<string> output = new Option<string>("-o", "--output");
         private Option<string> outputNaPlaceholder = new Option<string>("--output-na-placeholder");
-        private Option<int?> autonumberStart = new Option<int?>("--autonumber-start");
+        //private Option<int?> autonumberStart = new Option<int?>("--autonumber-start");
         private Option<bool> restrictFilenames = new Option<bool>("--restrict-filenames");
+        //no restrict filenames
+        //windows filenames
+        //no windows filenames
+        //trim filenames
         private Option<bool> noOverwrites = new Option<bool>("-w", "--no-overwrites");
+        //force overwrites
         private Option<bool> doContinue = new Option<bool>("-c", "--continue");
         private Option<bool> noContinue = new Option<bool>("--no-continue");
+        //part
         private Option<bool> noPart = new Option<bool>("--no-part");
+        //mtime
         private Option<bool> noMtime = new Option<bool>("--no-mtime");
         private Option<bool> writeDescription = new Option<bool>("--write-description");
+        //no write description
         private Option<bool> writeInfoJson = new Option<bool>("--write-info-json");
-        private Option<bool> writeAnnotations = new Option<bool>("--write-annotations");
+        //no write info json
+        //write playlist metafiles
+        //no write playlist metafiles
+        //clean info json
+        //no clean info json
+        //write comments 
+        //no write comments
+        //private Option<bool> writeAnnotations = new Option<bool>("--write-annotations");
         private Option<string> loadInfoJson = new Option<string>("--load-info-json");
         private Option<string> cookies = new Option<string>("--cookies");
+        //no cookies
+        //cookies from browser
+        //no cookies from browser
         private Option<string> cacheDir = new Option<string>("--cache-dir");
         private Option<bool> noCacheDir = new Option<bool>("--no-cache-dir");
         private Option<bool> rmCacheDir = new Option<bool>("--rm-cache-dir");

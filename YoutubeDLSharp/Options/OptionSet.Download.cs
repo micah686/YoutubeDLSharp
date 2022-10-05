@@ -6,23 +6,35 @@ namespace YoutubeDLSharp.Options
 {
     public partial class OptionSet
     {
+        //concurrent fragments
         private Option<long?> limitRate = new Option<long?>("-r", "--limit-rate");
+        //throttled rate
         private Option<int?> retries = new Option<int?>("-R", "--retries");
+        //file-access retries
         private Option<int?> fragmentRetries = new Option<int?>("--fragment-retries");
+        //retry sleep
         private Option<bool> skipUnavailableFragments = new Option<bool>("--skip-unavailable-fragments");
         private Option<bool> abortOnUnavailableFragment = new Option<bool>("--abort-on-unavailable-fragment");
         private Option<bool> keepFragments = new Option<bool>("--keep-fragments");
+        //no keep fragments
         private Option<long?> bufferSize = new Option<long?>("--buffer-size");
+        //resize buffer
         private Option<bool> noResizeBuffer = new Option<bool>("--no-resize-buffer");
         private Option<long?> httpChunkSize = new Option<long?>("--http-chunk-size");
-        private Option<bool> playlistReverse = new Option<bool>("--playlist-reverse");
+        //private Option<bool> playlistReverse = new Option<bool>("--playlist-reverse");
         private Option<bool> playlistRandom = new Option<bool>("--playlist-random");
+        //lazy playlist
+        //no lazy playlist
         private Option<bool> xattrSetFilesize = new Option<bool>("--xattr-set-filesize");
-        private Option<bool> hlsPreferNative = new Option<bool>("--hls-prefer-native");
-        private Option<bool> hlsPreferFfmpeg = new Option<bool>("--hls-prefer-ffmpeg");
+        //private Option<bool> hlsPreferNative = new Option<bool>("--hls-prefer-native");
+        //private Option<bool> hlsPreferFfmpeg = new Option<bool>("--hls-prefer-ffmpeg");
         private Option<bool> hlsUseMpegts = new Option<bool>("--hls-use-mpegts");
-        private Option<string> externalDownloader = new Option<string>("--external-downloader");
-        private Option<string> externalDownloaderArgs = new Option<string>("--external-downloader-args");
+        //no hls use mpegts
+        //download sections
+        //downloader
+        //downloader-args
+        //private Option<string> externalDownloader = new Option<string>("--external-downloader");
+        //private Option<string> externalDownloaderArgs = new Option<string>("--external-downloader-args");
 
         /// <summary>
         /// Maximum download rate in bytes per
