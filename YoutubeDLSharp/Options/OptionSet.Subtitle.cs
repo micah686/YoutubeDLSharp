@@ -6,45 +6,52 @@ namespace YoutubeDLSharp.Options
 {
     public partial class OptionSet
     {
-        private Option<bool> writeSubs = new Option<bool>("--write-subs");
-        //no write subs
-        private Option<bool> writeAutoSubs = new Option<bool>("--write-auto-subs");
-        //no write auto subs
-        //private Option<bool> allSubs = new Option<bool>("--all-subs");
-        private Option<bool> listSubs = new Option<bool>("--list-subs");
-        private Option<string> subFormat = new Option<string>("--sub-format");
-        private Option<string> subLang = new Option<string>("--sub-lang");
+        private Option<bool> _writeSubs = new Option<bool>("--write-subs");
+        private Option<bool> _noWriteSubs = new Option<bool>("--no-write-subs");
+        private Option<bool> _writeAutoSubs = new Option<bool>("--write-auto-subs");
+        private Option<bool> _noWriteAutoSubs = new Option<bool>("--no-write-auto-subs");
+        private Option<bool> _listSubs = new Option<bool>("--list-subs");
+        private Option<string> _subsFormat = new Option<string>("--sub-format");
+        private Option<string> _subsLangs = new Option<string>("--sub-langs");
+
 
         /// <summary>
         /// Write subtitle file
         /// </summary>
-        public bool WriteSub { get => writeSub.Value; set => writeSub.Value = value; }
+        public bool WriteSubs { get => _writeSubs.Value; set => _writeSubs.Value = value; }
         /// <summary>
-        /// Write automatically generated subtitle
-        /// file (YouTube only)
+        /// Do not write subtitle file (default)
         /// </summary>
-        public bool WriteAutoSub { get => writeAutoSub.Value; set => writeAutoSub.Value = value; }
+        public bool NoWriteSubs { get => _noWriteSubs.Value; set => _noWriteSubs.Value = value; }
         /// <summary>
-        /// Download all the available subtitles of
-        /// the video
+        /// Write automatically generated subtitle file
+        /// (Alias: --write-automatic-subs)
         /// </summary>
-        public bool AllSubs { get => allSubs.Value; set => allSubs.Value = value; }
+        public bool WriteAutoSubs { get => _writeAutoSubs.Value; set => _writeAutoSubs.Value = value;}
         /// <summary>
-        /// List all available subtitles for the
-        /// video
+        /// Do not write auto-generated subtitles
+        /// (default) (Alias: --no-write-automatic-subs)
         /// </summary>
-        public bool ListSubs { get => listSubs.Value; set => listSubs.Value = value; }
+        public bool NoWriteAutoSubs { get => _noWriteAutoSubs.Value; set => _noWriteAutoSubs.Value = value;}
         /// <summary>
-        /// Subtitle format, accepts formats
-        /// preference, for example: &quot;srt&quot; or
-        /// &quot;ass/srt/best&quot;
+        /// List available subtitles of each video.
+        /// Simulate unless --no-simulate is used
         /// </summary>
-        public string SubFormat { get => subFormat.Value; set => subFormat.Value = value; }
+        public bool ListSubs { get => _listSubs.Value;set => _listSubs.Value = value; }
         /// <summary>
-        /// Languages of the subtitles to download
-        /// (optional) separated by commas, use
-        /// --list-subs for available language tags
+        /// Subtitle format; accepts formats preference,
+        /// e.g. "srt" or "ass/srt/best"
         /// </summary>
-        public string SubLang { get => subLang.Value; set => subLang.Value = value; }
+        public string SubsFormat { get => _subsFormat.Value; set => _subsFormat.Value = value; }
+        /// <summary>
+        /// Languages of the subtitles to download (can
+        /// be regex) or "all" separated by commas, e.g.
+        /// --sub-langs "en.*,ja". You can prefix the
+        /// language code with a "-" to exclude it from
+        /// the requested languages, e.g. --sub-langs
+        /// all,-live_chat. Use --list-subs for a list
+        /// of available language tags
+        /// </summary>
+        public string SubsLangs { get => _subsLangs.Value; set => _subsLangs.Value = value; }
     }
 }
