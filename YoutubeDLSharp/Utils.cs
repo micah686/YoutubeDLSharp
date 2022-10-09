@@ -89,21 +89,59 @@ namespace YoutubeDLSharp
             return null;
         }
 
+        public static string YtDlpBinaryName(bool fullPath = false)
+        {
+            const string BASE_GITHUB_URL = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp";
+
+            string downloadUrl = "";
+            switch (OSHelper.GetOSVersion())
+            {
+                case OSVersion.Windows:
+                    downloadUrl = $"{BASE_GITHUB_URL}.exe";
+                    break;
+                case OSVersion.OSX:
+                    downloadUrl = $"{BASE_GITHUB_URL}_macos";
+                    break;
+                case OSVersion.Linux:
+                    downloadUrl = BASE_GITHUB_URL;
+                    break;
+                default:
+                    throw new Exception("Your OS isn't supported");
+            }
+
+            if (fullPath)
+            {
+                return downloadUrl;
+            }
+            else
+            {
+                return Path.GetFileName(downloadUrl);
+            }
+        }
+
+        public static string FfmpegBinaryName()
+        {
+            switch (OSHelper.GetOSVersion())
+            {
+                case OSVersion.Windows:
+                    return "ffmpeg.exe";
+                case OSVersion.OSX:
+                    return "ffmpeg";
+                case OSVersion.Linux:
+                    return "ffmpeg";
+                default:
+                    throw new Exception("Your OS isn't supported");
+            }
+        }
+
         /// <summary>
         /// Downloads the YT-DLP binary depending on OS
         /// </summary>
         /// <param name="directoryPath">The optional directory of where it should be saved to</param>
         /// <exception cref="Exception"></exception>
         public static void DownloadYtDlp(string directoryPath = "")
-        {
-            const string BASE_GITHUB_URL = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp";
-            string downloadUrl = OSHelper.GetOSVersion() switch
-            {
-                OSVersion.Windows => $"{BASE_GITHUB_URL}.exe",
-                OSVersion.OSX => $"{BASE_GITHUB_URL}_macos",
-                OSVersion.Linux => BASE_GITHUB_URL,
-                _ => throw new Exception("Your OS isn't supported")
-            };
+        {            
+            string downloadUrl = YtDlpBinaryName(true);
 
             if (string.IsNullOrEmpty(directoryPath)) { directoryPath = Directory.GetCurrentDirectory(); }
 
@@ -167,14 +205,16 @@ namespace YoutubeDLSharp
         }
 
         /// <summary>
-        /// Checks sections of a <see cref="JsonNode"/>, stopping if it hits a "null"
+        /// Checks sections of a <see cref="JsonNode"/>, stopping if it hits a null
         /// </summary>
         /// <param name="json">Json object you want to look through</param>
         /// <param name="keys">List of properties you want to check through</param>
         /// <returns>Returns the object if it could find the value, or an empty string if a result turned up null</returns>
         private static string JsonPeeker(JsonObject json, string[] keys)
         {
+#nullable enable
             JsonNode? obj = null;
+#nullable disable
             for (int i = 0; i < keys.Length; i++)
             {
                 if (obj == null)
