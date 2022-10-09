@@ -81,11 +81,11 @@ namespace YoutubeDLSharp.Options
         public string OutputNaPlaceholder { get => _outputNaPlaceholder.Value; set => _outputNaPlaceholder.Value = value; }
         /// <summary>
         /// Restrict filenames to only ASCII characters,
-        /// and avoid "&" and spaces in filenames
+        /// and avoid "&amp;" and spaces in filenames
         /// </summary>
         public bool RestrictFileNames { get => _restrictFilenames.Value; set => _restrictFilenames.Value = value; }
         /// <summary>
-        /// Allow Unicode characters, "&" and spaces in
+        /// Allow Unicode characters, "&amp;" and spaces in
         /// filenames (default)
         /// </summary>
         public bool NoRestrictFileNames { get => _noRestrictFilenames.Value; set => _noRestrictFilenames.Value = value; }
