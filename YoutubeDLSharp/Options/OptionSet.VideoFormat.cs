@@ -20,7 +20,7 @@ namespace YoutubeDLSharp.Options
         private Option<bool> _checkAllFormats = new Option<bool>("--check-all-formats");
         private Option<bool> _noCheckFormats = new Option<bool>("--no-check-formats");
         private Option<bool> _listFormats = new Option<bool>("-F","--list-formats");
-        private Option<string> _mergeOutputFormat = new Option<string>("--merge-output-format");
+        private Option<DownloadMergeFormat> _mergeOutputFormat = new Option<DownloadMergeFormat>("--merge-output-format");
 
         /// <summary>
         /// Video format code, see "FORMAT SELECTION"
@@ -101,6 +101,6 @@ namespace YoutubeDLSharp.Options
         /// Ignored if no merge is required. (currently
         /// supported: avi, flv, mkv, mov, mp4, webm)
         /// </summary>
-        public string MergeOutputFormat { get => _format.Value; set => _format.Value = value; }
+        public DownloadMergeFormat MergeOutputFormat { get => _mergeOutputFormat.Value; set => _mergeOutputFormat.Value = value; }
     }
 }

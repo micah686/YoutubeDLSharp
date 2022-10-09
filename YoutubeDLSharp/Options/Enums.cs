@@ -6,7 +6,7 @@ namespace YoutubeDLSharp.Options
     /// </summary>
     public enum DownloadMergeFormat
     {
-        Unspecified, Mp4, Mkv, Ogg, Webm, Flv
+        Unspecified, Avi, Flv, Mkv, Mov, Mp4, Webm
     }
 
     /// <summary>
@@ -14,7 +14,8 @@ namespace YoutubeDLSharp.Options
     /// </summary>
     public enum AudioConversionFormat
     {
-        Best, Aac, Flac, Mp3, M4a, Opus, Vorbis, Wav
+        //Best, Aac, Flac, Mp3, M4a, Opus, Vorbis, Wav
+        Best, Aac, Alac, Flac, M4a, Mp3, Opus, Vorbis, Wav
     }
 
     /// <summary>
@@ -22,6 +23,7 @@ namespace YoutubeDLSharp.Options
     /// </summary>
     public enum VideoRecodeFormat
     {
-        None, Mp4, Mkv, Ogg, Webm, Flv, Avi
+        //None, Mp4, Mkv, Ogg, Webm, Flv, Avi
+        None, Avi, Flv, Mkv, Mov, Mp4, Webm, Aac, Aiff, Alac, Flac, M4a, Mka, Mp3, Ogg, Opus, Vorbis, Wav
     }
 }

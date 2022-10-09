@@ -9,8 +9,8 @@ namespace YoutubeDLSharp.Options
         private Option<bool> _extractAudio = new Option<bool>("-x", "--extract-audio");
         private Option<AudioConversionFormat> _audioFormat = new Option<AudioConversionFormat>("--audio-format");
         private Option<string> _audioQuality = new Option<string>("--audio-quality");
-        private Option<string> _remuxVideo = new Option<string>("--remux-video");
-        private Option<string> _recodeVideo = new Option<string>("--recode-video");
+        private Option<VideoRecodeFormat> _remuxVideo = new Option<VideoRecodeFormat>("--remux-video");
+        private Option<VideoRecodeFormat> _recodeVideo = new Option<VideoRecodeFormat>("--recode-video");
         private Option<string> _postProcessorArgs = new Option<string>("--postprocessor-args");
         private Option<bool> _keepVideo = new Option<bool>("-k","--keep-video");
         private Option<bool> _noKeepVideo = new Option<bool>("--no-keep-video");
@@ -75,13 +75,13 @@ namespace YoutubeDLSharp.Options
         /// "aac>m4a/mov>mp4/mkv" will remux aac to m4a,
         /// mov to mp4 and anything else to mkv
         /// </summary>
-        public string RemuxVideo { get => _recodeVideo.Value;  set => _recodeVideo.Value = value; }
+        public VideoRecodeFormat RemuxVideo { get => _recodeVideo.Value;  set => _recodeVideo.Value = value; }
         /// <summary>
         /// Re-encode the video into another format if
         /// necessary. The syntax and supported formats
         /// are the same as --remux-video
         /// </summary>
-        public string RecodeVideo { get => _recodeVideo.Value; set => _recodeVideo.Value = value; }
+        public VideoRecodeFormat RecodeVideo { get => _recodeVideo.Value; set => _recodeVideo.Value = value; }
         /// <summary>
         /// Give these arguments to the postprocessors.
         /// Specify the postprocessor/executable name

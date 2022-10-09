@@ -17,10 +17,10 @@ namespace YoutubeDLSharp.Options
         private Option<bool> _abortOnUnavailableFragments = new Option<bool>("--abort-on-unavailable-fragment");
         private Option<bool> _keepFragements = new Option<bool>("--keep-fragments");
         private Option<bool> _noKeepFragments = new Option<bool>("--no-keep-fragments");
-        private Option<long> _bufferSize = new Option<long>("--buffer-size");
+        private Option<long?> _bufferSize = new Option<long?>("--buffer-size");
         private Option<bool> _resizeBuffer = new Option<bool>("--resize-buffer");
         private Option<bool> _noResizeBuffer = new Option<bool>("--no-resize-buffer");
-        private Option<long> _httpChunkSize = new Option<long>("--http-chunk-size");
+        private Option<long?> _httpChunkSize = new Option<long?>("--http-chunk-size");
         private Option<bool> _playlistRandom = new Option<bool>("--playlist-random");
         private Option<bool> _lazyPlaylist = new Option<bool>("--lazy-playlist");
         private Option<bool> _noLazyPlaylist = new Option<bool>("--no-lazy-playlist");
@@ -100,7 +100,7 @@ namespace YoutubeDLSharp.Options
         /// Size of download buffer, e.g. 1024 or 16K
         /// (default is 1024)
         /// </summary>
-        public long BufferSize { get => _bufferSize.Value; set => _bufferSize.Value = value; }
+        public long? BufferSize { get => _bufferSize.Value; set => _bufferSize.Value = value; }
         /// <summary>
         /// The buffer size is automatically resized
         /// from an initial value of --buffer-size
@@ -118,7 +118,7 @@ namespace YoutubeDLSharp.Options
         /// bandwidth throttling imposed by a webserver
         /// (experimental)
         /// </summary>
-        public long HttpChunkSize { get => _httpChunkSize.Value; set => _httpChunkSize.Value = value; }
+        public long? HttpChunkSize { get => _httpChunkSize.Value; set => _httpChunkSize.Value = value; }
         /// <summary>
         /// Download playlist videos in random order
         /// </summary>
