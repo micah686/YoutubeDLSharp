@@ -202,8 +202,7 @@ namespace YoutubeDLSharp
         {
             var opts = GetDownloadOptions();
             opts.NoPlaylist = false;
-            opts.PlaylistStart = start;
-            opts.PlaylistEnd = end;
+            opts.PlaylistItems = $"{start}:{end}";
             if (items != null)
                 opts.PlaylistItems = String.Join(",", items);
             opts.Format = format;
@@ -294,8 +293,7 @@ namespace YoutubeDLSharp
             var outputFiles = new List<string>();
             var opts = GetDownloadOptions();
             opts.NoPlaylist = false;
-            opts.PlaylistStart = start;
-            opts.PlaylistEnd = end;
+            opts.PlaylistItems = $"{start}:{end}";
             if (items != null)
                 opts.PlaylistItems = String.Join(",", items);
             opts.Format = "bestaudio/best";
@@ -333,15 +331,16 @@ namespace YoutubeDLSharp
                 IgnoreErrors = this.IgnoreDownloadErrors,
                 IgnoreConfig = true,
                 NoPlaylist = true,
-                HlsPreferNative = true,
-                ExternalDownloaderArgs = "ffmpeg:-nostats -loglevel 0",
+                Downloader = "m3u8:native",
+                DownloaderArgs = "ffmpeg:-nostats -loglevel 0",
                 Output = Path.Combine(OutputFolder, OutputFileTemplate),
-                RestrictFilenames = this.RestrictFilenames,
+                RestrictFileNames = this.RestrictFilenames,
                 NoContinue = this.OverwriteFiles,
                 NoOverwrites = !this.OverwriteFiles,
                 NoPart = true,
                 FfmpegLocation = Utils.GetFullPath(this.FFmpegPath),
-                Exec = "echo {}"
+                Exec = "echo {}",  
+                
             };
         }
 

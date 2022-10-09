@@ -107,7 +107,7 @@ namespace YoutubeDLSharp.Options
         /// <summary>
         /// Do not overwrite any files
         /// </summary>
-        public bool NoOverwites { get => _noOverwrites.Value; set => _noOverwrites.Value = value; }
+        public bool NoOverwrites { get => _noOverwrites.Value; set => _noOverwrites.Value = value; }
         /// <summary>
         /// Overwrite all video and metadata files. This
         /// option includes --no-continue
