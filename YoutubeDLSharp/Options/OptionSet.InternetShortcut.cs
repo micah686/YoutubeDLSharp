@@ -32,6 +32,5 @@ namespace YoutubeDLSharp.Options
         /// Write a .desktop Linux internet shortcut
         /// </summary>
         public bool WriteDesktopLink { get => _writeDesktopLink.Value; set => _writeDesktopLink.Value = value;}
-
     }
 }

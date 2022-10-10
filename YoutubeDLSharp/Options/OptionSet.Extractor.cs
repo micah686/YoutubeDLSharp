@@ -48,8 +48,5 @@ namespace YoutubeDLSharp.Options
         /// arguments for different extractors
         /// </summary>
         public string ExtractorArgs { get => _extractorArgs.Value; set => _extractorArgs.Value = value; }
-
-
-
     }
 }
