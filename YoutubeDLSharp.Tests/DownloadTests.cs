@@ -11,14 +11,14 @@ namespace YoutubeDLSharp.Tests
     public class DownloadTests
     {
         private const string URL = "https://www.youtube.com/watch?v=C0DPdy98e4c";
-        private static YoutubeDL ydl;
+        private static YtDlp ydl;
         private static List<string> downloadedFiles;
 
         [ClassInitialize]
         public static void Initialize(TestContext context)
         {
             PrepTests.DownloadBinaries();
-            ydl = new YoutubeDL();
+            ydl = new YtDlp();
             ydl.YoutubeDLPath = "yt-dlp.exe";
             ydl.FFmpegPath = "ffmpeg.exe";
             downloadedFiles = new List<string>();

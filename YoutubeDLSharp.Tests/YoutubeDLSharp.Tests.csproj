@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\YoutubeDLSharp\YoutubeDLSharp.csproj" />
+    <ProjectReference Include="..\YoutubeDLSharp\YtDlpSharpLib.csproj" />
   </ItemGroup>
 
 </Project>

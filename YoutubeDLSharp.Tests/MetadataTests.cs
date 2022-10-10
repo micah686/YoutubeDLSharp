@@ -8,13 +8,13 @@ namespace YoutubeDLSharp.Tests
     [TestClass]
     public class MetadataTests
     {
-        private static YoutubeDL ydl;
+        private static YtDlp ydl;
 
         [ClassInitialize]
         public static void Initialize(TestContext context)
         {
             PrepTests.DownloadBinaries();
-            ydl = new YoutubeDL();
+            ydl = new YtDlp();
             ydl.YoutubeDLPath = "yt-dlp.exe";
             ydl.FFmpegPath = "ffmpeg.exe";
         }

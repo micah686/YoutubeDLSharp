@@ -17,11 +17,11 @@ namespace YoutubeDLSharp.Tests
             {
                 if (!File.Exists("yt-dlp.exe"))
                 {
-                    YoutubeDL.DownloadYtDlpBinary();
+                    YtDlp.DownloadYtDlpBinary();
                 }
                 if (!File.Exists("ffmpeg.exe"))
                 {
-                    YoutubeDL.DownloadFFmpegBinary();
+                    YtDlp.DownloadFFmpegBinary();
                 }
                 _didDownloadBinaries = true;
             }
