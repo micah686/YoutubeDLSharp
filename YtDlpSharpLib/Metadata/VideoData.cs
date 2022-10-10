@@ -17,7 +17,7 @@ namespace YtDlpSharpLib.Metadata
         [JsonProperty("title")]
         public string Title { get; set; }
         [JsonProperty("formats")]
-        public FormatData[] Formats { get; set; }
+        public FormatInfo[] Formats { get; set; }
         [JsonProperty("url")]
         public string Url { get; set; }
         [JsonProperty("ext")]
