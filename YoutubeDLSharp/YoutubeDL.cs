@@ -133,6 +133,72 @@ namespace YoutubeDLSharp
             return new RunResult<VideoData>(code == 0, errors, videoData);
         }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        public async Task<RunResult<string>> DownloadContent(string url, bool audioOnly,
+            string format = "bestvideo+bestaudio/best", CancellationToken ct = default,
+            IProgress<DownloadProgress> progress = null, IProgress<string> output = null,
+            DownloadMergeFormat mergeFormat = DownloadMergeFormat.Unspecified, VideoRecodeFormat recodeFormat = VideoRecodeFormat.None,
+            AudioConversionFormat audioFormat = AudioConversionFormat.Best, OptionSet overrideOptions = null)
+        {
+            var options = GetDownloadOptions();
+            if (overrideOptions != null)
+            {
+                options = options.OverrideOptions(overrideOptions);
+            }
+            if (audioOnly == false)
+            {
+                options.Format = format;
+                options.MergeOutputFormat = mergeFormat;
+                options.RecodeVideo = recodeFormat;
+            }
+            else
+            {
+                options.Format = "bestaudio/best";
+                options.ExtractAudio = true;
+                options.AudioFormat = audioFormat;
+            }
+
+
+            string outputFile = string.Empty;
+            var process = new YoutubeDLProcess(YtDlpPath);
+            // Report the used ytdl args
+            output?.Report($"Arguments: {process.ConvertToArgs(new[] { url }, options)}\n");
+            process.OutputReceived += (o, e) =>
+            {
+                var match = rgxFile.Match(e.Data);
+                if (match.Success)
+                {
+                    outputFile = match.Groups[1].ToString().Trim('"');
+                    progress?.Report(new DownloadProgress(DownloadState.Success, data: outputFile));
+                }
+                output?.Report(e.Data);
+            };
+            (int code, string[] errors) = await runner.RunThrottled(process, new[] { url }, options, ct, progress);
+            return new RunResult<string>(code == 0, errors, outputFile);
+        }
+
         /// <summary>
         /// Runs a download of the specified video with an optional conversion afterwards.
         /// </summary>
@@ -145,38 +211,48 @@ namespace YoutubeDLSharp
         /// <param name="output">A progress provider used to capture the standard output.</param>
         /// <param name="overrideOptions">Override options of the default option set for this run.</param>
         /// <returns>A RunResult object containing the path to the downloaded and converted video.</returns>
-        public async Task<RunResult<string>> RunVideoDownload(string url,
+        public async Task<RunResult<string>> DownloadVideo(string url,
             string format = "bestvideo+bestaudio/best",
             DownloadMergeFormat mergeFormat = DownloadMergeFormat.Unspecified,
             VideoRecodeFormat recodeFormat = VideoRecodeFormat.None,
             CancellationToken ct = default, IProgress<DownloadProgress> progress = null,
             IProgress<string> output = null, OptionSet overrideOptions = null)
         {
-            var opts = GetDownloadOptions();
-            opts.Format = format;
-            opts.MergeOutputFormat = mergeFormat;
-            opts.RecodeVideo = recodeFormat;
-            if (overrideOptions != null)
-            {
-                opts = opts.OverrideOptions(overrideOptions);
-            }
-            string outputFile = String.Empty;
-            var process = new YoutubeDLProcess(YtDlpPath);
-            // Report the used ytdl args
-            output?.Report($"Arguments: {process.ConvertToArgs(new[] { url }, opts)}\n");
-            process.OutputReceived += (o, e) =>
-            {
-                var match = rgxFile.Match(e.Data);
-                if (match.Success)
-                {
-                    outputFile = match.Groups[1].ToString().Trim('"');
-                    progress?.Report(new DownloadProgress(DownloadState.Success, data: outputFile));
-                }
-                output?.Report(e.Data);
-            };
-            (int code, string[] errors) = await runner.RunThrottled(process, new[] { url }, opts, ct, progress);
-            return new RunResult<string>(code == 0, errors, outputFile);
+           return await DownloadContent(url, false, format, ct, progress, output, mergeFormat, recodeFormat, overrideOptions: overrideOptions);
         }
+        /// <summary>
+        /// Runs a download of the specified video with and converts it to an audio format afterwards.
+        /// </summary>
+        /// <param name="url">The URL of the video to be downloaded.</param>
+        /// <param name="audioFormat">The audio format the video will be converted to after downloaded.</param>
+        /// <param name="ct">A CancellationToken used to cancel the download.</param>
+        /// <param name="progress">A progress provider used to get download progress information.</param>
+        /// <param name="output">A progress provider used to capture the standard output.</param>
+        /// <param name="overrideOptions">Override options of the default option set for this run.</param>
+        /// <returns>A RunResult object containing the path to the downloaded and converted video.</returns>
+        public async Task<RunResult<string>> DownloadAudio(string url, AudioConversionFormat audioFormat,
+            CancellationToken ct = default, IProgress<DownloadProgress> progress = null,
+            IProgress<string> output = null, OptionSet overrideOptions = null)
+        {
+            return await DownloadContent(url, true, ct:ct, progress:progress, output:output, audioFormat: audioFormat, overrideOptions: overrideOptions);
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
 
         /// <summary>
         /// Runs a download of the specified video playlist with an optional conversion afterwards.
@@ -229,47 +305,7 @@ namespace YoutubeDLSharp
             (int code, string[] errors) = await runner.RunThrottled(process, new[] { url }, opts, ct, progress);
             return new RunResult<string[]>(code == 0, errors, outputFiles.ToArray());
         }
-
-        /// <summary>
-        /// Runs a download of the specified video with and converts it to an audio format afterwards.
-        /// </summary>
-        /// <param name="url">The URL of the video to be downloaded.</param>
-        /// <param name="format">The audio format the video will be converted to after downloaded.</param>
-        /// <param name="ct">A CancellationToken used to cancel the download.</param>
-        /// <param name="progress">A progress provider used to get download progress information.</param>
-        /// <param name="output">A progress provider used to capture the standard output.</param>
-        /// <param name="overrideOptions">Override options of the default option set for this run.</param>
-        /// <returns>A RunResult object containing the path to the downloaded and converted video.</returns>
-        public async Task<RunResult<string>> RunAudioDownload(string url, AudioConversionFormat format,
-            CancellationToken ct = default, IProgress<DownloadProgress> progress = null,
-            IProgress<string> output = null, OptionSet overrideOptions = null)
-        {
-            var opts = GetDownloadOptions();
-            opts.Format = "bestaudio/best";
-            opts.ExtractAudio = true;
-            opts.AudioFormat = format;
-            if (overrideOptions != null)
-            {
-                opts = opts.OverrideOptions(overrideOptions);
-            }
-            string outputFile = String.Empty;
-            var error = new List<string>();
-            var process = new YoutubeDLProcess(YtDlpPath);
-            // Report the used ytdl args
-            output?.Report($"Arguments: {process.ConvertToArgs(new[] { url }, opts)}\n");
-            process.OutputReceived += (o, e) =>
-            {
-                var match = rgxFile.Match(e.Data);
-                if (match.Success)
-                {
-                    outputFile = match.Groups[1].ToString().Trim('"');
-                    progress?.Report(new DownloadProgress(DownloadState.Success, data: outputFile));
-                }
-                output?.Report(e.Data);
-            };
-            (int code, string[] errors) = await runner.RunThrottled(process, new[] { url }, opts, ct, progress);
-            return new RunResult<string>(code == 0, errors, outputFile);
-        }
+        
 
         /// <summary>
         /// Runs a download of the specified video playlist and converts all videos to an audio format afterwards.
