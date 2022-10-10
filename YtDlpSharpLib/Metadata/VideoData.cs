@@ -72,7 +72,7 @@ namespace YtDlpSharpLib.Metadata
         [JsonProperty("location")]
         public string Location { get; set; }
         [JsonProperty("subtitles")]
-        public Dictionary<string, SubtitleData[]> Subtitles { get; set; }
+        public Dictionary<string, SubtitleInfo[]> Subtitles { get; set; }
         [JsonProperty("duration")]
         public float? Duration { get; set; }
         [JsonProperty("view_count")]
