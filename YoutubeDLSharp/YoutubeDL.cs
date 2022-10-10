@@ -37,7 +37,7 @@ namespace YoutubeDLSharp
         /// Template of the name of the downloaded file on youtube-dl style.
         /// See https://github.com/ytdl-org/youtube-dl#output-template.
         /// </summary>
-        public string OutputFileTemplate { get; set; } = "%(title)s.%(ext)s";
+        public string OutputFileTemplate { get; set; } = "%(title)s [%(id)s].%(ext)s";
         /// <summary>
         /// If set to true, file names a re restricted to ASCII characters.
         /// </summary>
@@ -133,53 +133,12 @@ namespace YoutubeDLSharp
             return new RunResult<VideoData>(code == 0, errors, videoData);
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        public async Task<RunResult<string>> DownloadContent(string url, bool audioOnly,
-            string format = "bestvideo+bestaudio/best", CancellationToken ct = default,
-            IProgress<DownloadProgress> progress = null, IProgress<string> output = null,
-            DownloadMergeFormat mergeFormat = DownloadMergeFormat.Unspecified, VideoRecodeFormat recodeFormat = VideoRecodeFormat.None,
-            AudioConversionFormat audioFormat = AudioConversionFormat.Best, OptionSet overrideOptions = null)
+        #region Internal Download
+        private async Task<RunResult<string>> DownloadSingleContentInternal(string url, bool audioOnly, bool isPlaylist,
+            string format = "bestvideo+bestaudio/best", CancellationToken ct = default, IProgress<DownloadProgress> progress = null, IProgress<string> output = null,
+            DownloadMergeFormat mergeFormat = DownloadMergeFormat.Unspecified, VideoRecodeFormat recodeFormat = VideoRecodeFormat.None, AudioConversionFormat audioFormat = AudioConversionFormat.Best, OptionSet overrideOptions = null)
         {
-            var options = GetDownloadOptions();
-            if (overrideOptions != null)
-            {
-                options = options.OverrideOptions(overrideOptions);
-            }
-            if (audioOnly == false)
-            {
-                options.Format = format;
-                options.MergeOutputFormat = mergeFormat;
-                options.RecodeVideo = recodeFormat;
-            }
-            else
-            {
-                options.Format = "bestaudio/best";
-                options.ExtractAudio = true;
-                options.AudioFormat = audioFormat;
-            }
-
+            var options = GenerateOptionSet(audioOnly,isPlaylist, start: null, end: null, items: null, format,mergeFormat, recodeFormat, audioFormat, overrideOptions);
 
             string outputFile = string.Empty;
             var process = new YoutubeDLProcess(YtDlpPath);
@@ -199,6 +158,62 @@ namespace YoutubeDLSharp
             return new RunResult<string>(code == 0, errors, outputFile);
         }
 
+        private async Task<RunResult<string[]>> DownloadPlaylistContentInternal(string url, bool audioOnly, bool isPlaylist, int? start = 1, int? end = null, int[] items = null,
+            string format = "bestvideo+bestaudio/best", CancellationToken ct = default, IProgress<DownloadProgress> progress = null, IProgress<string> output = null,
+            DownloadMergeFormat mergeFormat = DownloadMergeFormat.Unspecified, VideoRecodeFormat recodeFormat = VideoRecodeFormat.None, AudioConversionFormat audioFormat = AudioConversionFormat.Best, OptionSet overrideOptions = null)
+        {
+            var options = GenerateOptionSet(audioOnly, isPlaylist, start, end, items, format, mergeFormat, recodeFormat, audioFormat, overrideOptions);
+
+            var outputFiles = new List<string>();
+            var process = new YoutubeDLProcess(YtDlpPath);
+            // Report the used ytdl args
+            output?.Report($"Arguments: {process.ConvertToArgs(new[] { url }, options)}\n");
+            process.OutputReceived += (o, e) =>
+            {
+                var match = rgxFile.Match(e.Data);
+                if (match.Success)
+                {
+                    var file = match.Groups[1].ToString().Trim('"');
+                    outputFiles.Add(file);
+                    progress?.Report(new DownloadProgress(DownloadState.Success, data: file));
+                }
+                output?.Report(e.Data);
+            };
+            (int code, string[] errors) = await runner.RunThrottled(process, new[] { url }, options, ct, progress);
+            return new RunResult<string[]>(code == 0, errors, outputFiles.ToArray());
+        }
+
+        private OptionSet GenerateOptionSet(bool audioOnly, bool isPlaylist, int? start = 1, int? end = null, int[] items = null, string format = "bestvideo+bestaudio/best",
+            DownloadMergeFormat mergeFormat = DownloadMergeFormat.Unspecified, VideoRecodeFormat recodeFormat = VideoRecodeFormat.None, AudioConversionFormat audioFormat = AudioConversionFormat.Best, OptionSet overrideOptions = null)
+        {
+            var options = GetDownloadOptions();
+            if (overrideOptions != null)
+            {
+                options = options.OverrideOptions(overrideOptions);
+            }
+            if (audioOnly == false)
+            {
+                options.Format = format;
+                options.MergeOutputFormat = mergeFormat;
+                options.RecodeVideo = recodeFormat;
+            }
+            else
+            {
+                options.Format = "bestaudio/best";
+                options.ExtractAudio = true;
+                options.AudioFormat = audioFormat;
+            }
+            if (isPlaylist)
+            {
+                options.NoPlaylist = false;
+                options.PlaylistItems = $"{start}:{end}";
+                if (items != null)
+                    options.PlaylistItems = string.Join(",", items);
+            }
+            return options;
+        }
+        #endregion
+        
         /// <summary>
         /// Runs a download of the specified video with an optional conversion afterwards.
         /// </summary>
@@ -218,7 +233,8 @@ namespace YoutubeDLSharp
             CancellationToken ct = default, IProgress<DownloadProgress> progress = null,
             IProgress<string> output = null, OptionSet overrideOptions = null)
         {
-           return await DownloadContent(url, false, format, ct, progress, output, mergeFormat, recodeFormat, overrideOptions: overrideOptions);
+            return await DownloadSingleContentInternal(url, audioOnly: false, isPlaylist: false, format, ct, progress, output,
+                mergeFormat, recodeFormat, audioFormat:AudioConversionFormat.Best, overrideOptions);
         }
         /// <summary>
         /// Runs a download of the specified video with and converts it to an audio format afterwards.
@@ -234,26 +250,9 @@ namespace YoutubeDLSharp
             CancellationToken ct = default, IProgress<DownloadProgress> progress = null,
             IProgress<string> output = null, OptionSet overrideOptions = null)
         {
-            return await DownloadContent(url, true, ct:ct, progress:progress, output:output, audioFormat: audioFormat, overrideOptions: overrideOptions);
+            return await DownloadSingleContentInternal(url, audioOnly: true, isPlaylist: false, format: null, ct, progress, output,
+                mergeFormat: DownloadMergeFormat.Unspecified, recodeFormat: VideoRecodeFormat.None, audioFormat, overrideOptions);
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-
         /// <summary>
         /// Runs a download of the specified video playlist with an optional conversion afterwards.
         /// </summary>
@@ -276,37 +275,9 @@ namespace YoutubeDLSharp
             CancellationToken ct = default, IProgress<DownloadProgress> progress = null,
             IProgress<string> output = null, OptionSet overrideOptions = null)
         {
-            var opts = GetDownloadOptions();
-            opts.NoPlaylist = false;
-            opts.PlaylistItems = $"{start}:{end}";
-            if (items != null)
-                opts.PlaylistItems = String.Join(",", items);
-            opts.Format = format;
-            opts.RecodeVideo = recodeFormat;
-            if (overrideOptions != null)
-            {
-                opts = opts.OverrideOptions(overrideOptions);
-            }
-            var outputFiles = new List<string>();
-            var process = new YoutubeDLProcess(YtDlpPath);
-            // Report the used ytdl args
-            output?.Report($"Arguments: {process.ConvertToArgs(new[] { url }, opts)}\n");
-            process.OutputReceived += (o, e) =>
-            {
-                var match = rgxFile.Match(e.Data);
-                if (match.Success)
-                {
-                    var file = match.Groups[1].ToString().Trim('"');
-                    outputFiles.Add(file);
-                    progress?.Report(new DownloadProgress(DownloadState.Success, data: file));
-                }
-                output?.Report(e.Data);
-            };
-            (int code, string[] errors) = await runner.RunThrottled(process, new[] { url }, opts, ct, progress);
-            return new RunResult<string[]>(code == 0, errors, outputFiles.ToArray());
+            return await DownloadPlaylistContentInternal(url, audioOnly: false, isPlaylist: true, start, end, items, format, ct, progress, output,
+                mergeFormat: DownloadMergeFormat.Unspecified, recodeFormat: recodeFormat, audioFormat: AudioConversionFormat.Best, overrideOptions);
         }
-        
-
         /// <summary>
         /// Runs a download of the specified video playlist and converts all videos to an audio format afterwards.
         /// </summary>
@@ -314,7 +285,7 @@ namespace YoutubeDLSharp
         /// <param name="start">The index of the first playlist video to download (starting at 1).</param>
         /// <param name="end">The index of the last playlist video to dowload (if null, download to end).</param>
         /// <param name="items">An array of indices of playlist video to download.</param>
-        /// <param name="format">The audio format the videos will be converted to after downloaded.</param>
+        /// <param name="audioFormat">The audio format the videos will be converted to after downloaded.</param>
         /// <param name="ct">A CancellationToken used to cancel the download.</param>
         /// <param name="progress">A progress provider used to get download progress information.</param>
         /// <param name="output">A progress provider used to capture the standard output.</param>
@@ -322,39 +293,12 @@ namespace YoutubeDLSharp
         /// <returns>A RunResult object containing the paths to the downloaded and converted videos.</returns>
         public async Task<RunResult<string[]>> RunAudioPlaylistDownload(string url,
             int? start = 1, int? end = null,
-            int[] items = null, AudioConversionFormat format = AudioConversionFormat.Best,
+            int[] items = null, AudioConversionFormat audioFormat = AudioConversionFormat.Best,
             CancellationToken ct = default, IProgress<DownloadProgress> progress = null,
             IProgress<string> output = null, OptionSet overrideOptions = null)
         {
-            var outputFiles = new List<string>();
-            var opts = GetDownloadOptions();
-            opts.NoPlaylist = false;
-            opts.PlaylistItems = $"{start}:{end}";
-            if (items != null)
-                opts.PlaylistItems = String.Join(",", items);
-            opts.Format = "bestaudio/best";
-            opts.ExtractAudio = true;
-            opts.AudioFormat = format;
-            if (overrideOptions != null)
-            {
-                opts = opts.OverrideOptions(overrideOptions);
-            }
-            var process = new YoutubeDLProcess(YtDlpPath);
-            // Report the used ytdl args
-            output?.Report($"Arguments: {process.ConvertToArgs(new[] { url }, opts)}\n");
-            process.OutputReceived += (o, e) =>
-            {
-                var match = rgxFile.Match(e.Data);
-                if (match.Success)
-                {
-                    var file = match.Groups[1].ToString().Trim('"');
-                    outputFiles.Add(file);
-                    progress?.Report(new DownloadProgress(DownloadState.Success, data: file));
-                }
-                output?.Report(e.Data);
-            };
-            (int code, string[] errors) = await runner.RunThrottled(process, new[] { url }, opts, ct, progress);
-            return new RunResult<string[]>(code == 0, errors, outputFiles.ToArray());
+            return await DownloadPlaylistContentInternal(url, audioOnly: true, isPlaylist: true, start, end, items, format:null, ct, progress, output,
+                mergeFormat: DownloadMergeFormat.Unspecified, recodeFormat: VideoRecodeFormat.None, audioFormat, overrideOptions);
         }
 
         /// <summary>
