@@ -40,7 +40,7 @@ namespace YtDlpSharpLib.Metadata
         [JsonProperty("display_id")]
         public string DisplayID { get; set; }
         [JsonProperty("thumbnails")]
-        public ThumbnailData[] Thumbnails { get; set; }
+        public ThumbnailInfo[] Thumbnails { get; set; }
         [JsonProperty("thumbnail")]
         public string Thumbnail { get; set; }
         [JsonProperty("description")]
