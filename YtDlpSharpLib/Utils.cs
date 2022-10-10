@@ -17,57 +17,7 @@ namespace YtDlpSharpLib
     /// </summary>
     public static class Utils
     {
-        private static readonly Regex rgxTimestamp = new Regex("[0-9]+(?::[0-9]+)+", RegexOptions.Compiled);
-        private static readonly Dictionary<char, string> accentChars
-            = "ÂÃÄÀÁÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖŐØŒÙÚÛÜŰÝÞßàáâãäåæçèéêëìíîïðñòóôõöőøœùúûüűýþÿ"
-                .Zip(new[] { "A","A","A","A","A","A","AE","C","E","E","E","E","I","I","I","I","D","N",
-                    "O","O","O","O","O","O","O","OE","U","U","U","U","U","Y","P","ss",
-                    "a","a","a","a","a","a","ae","c","e","e","e","e","i","i","i","i","o","n",
-                    "o","o","o","o","o","o","o","oe","u","u","u","u","u","y","p","y"},
-                    (c, s) => new { Key = c, Val = s }).ToDictionary(o => o.Key, o => o.Val);
-
-        /// <summary>
-        /// Sanitize a string to be a valid file name.
-        /// Ported from:
-        /// https://github.com/ytdl-org/youtube-dl/blob/33c1c7d80fd99024879a5f087b55b24374385e43/youtube_dl/utils.py#L2067
-        /// </summary>
-        /// <returns></returns>
-        public static string Sanitize(string s, bool restricted = false)
-        {
-            rgxTimestamp.Replace(s, m => m.Groups[0].Value.Replace(':', '_'));
-            var result = string.Join("", s.Select(c => sanitizeChar(c, restricted)));
-            result = result.Replace("__", "_").Trim('_');
-            if (restricted && result.StartsWith("-_"))
-                result = result.Substring(2);
-            if (result.StartsWith("-"))
-                result = "_" + result.Substring(1);
-            result = result.TrimStart('.');
-            if (string.IsNullOrWhiteSpace(result))
-                result = "_";
-            return result;
-        }
-
-        private static string sanitizeChar(char c, bool restricted)
-        {
-            const char CONTROL_CHARS = (char)31;
-            const char MAX_CHAR_DEL = (char)127;
-            if (restricted && accentChars.ContainsKey(c))
-                return accentChars[c];
-            else if (c == '?' || c <= CONTROL_CHARS || c == MAX_CHAR_DEL)
-                return "";
-            else if (c == '"')
-                return restricted ? "" : "\'";
-            else if (c == ':')
-                return restricted ? "_-" : " -";
-            else if ("\\/|*<>".Contains(c))
-                return "_";
-            else if (restricted && "!&\'()[]{}$;`^,# ".Contains(c))
-                return "_";
-            else if (restricted && c > MAX_CHAR_DEL)
-                return "_";
-            else return c.ToString();
-        }
-
+        
         /// <summary>
         /// Returns the absolute path for the specified path string.
         /// Also searches the environment's PATH variable.
@@ -87,6 +37,13 @@ namespace YtDlpSharpLib
                     return fullPath;
             }
             return null;
+        }
+
+        public static void DownloadBinaries(string directoryPath = "")
+        {
+            DownloadYtDlp(directoryPath);
+            DownloadFFmpeg(directoryPath);
+            DownloadFFprobe(directoryPath);
         }
 
         public static string YtDlpBinaryName(bool fullPath = false)
@@ -126,9 +83,22 @@ namespace YtDlpSharpLib
                 case OSVersion.Windows:
                     return "ffmpeg.exe";
                 case OSVersion.OSX:
-                    return "ffmpeg";
                 case OSVersion.Linux:
                     return "ffmpeg";
+                default:
+                    throw new Exception("Your OS isn't supported");
+            }
+        }
+
+        public static string FfprobeBinaryName()
+        {
+            switch (OSHelper.GetOSVersion())
+            {
+                case OSVersion.Windows:
+                    return "ffprobe.exe";
+                case OSVersion.OSX:
+                case OSVersion.Linux:
+                    return "ffprobe";
                 default:
                     throw new Exception("Your OS isn't supported");
             }
@@ -187,6 +157,35 @@ namespace YtDlpSharpLib
                 }
             }
 
+        }
+
+        public static void DownloadFFprobe(string directoryPath = "")
+        {
+            if (string.IsNullOrEmpty(directoryPath)) { directoryPath = Directory.GetCurrentDirectory(); }
+            const string FFMPEG_API_URL = "https://ffbinaries.com/api/v1/version/latest";
+
+            string jsonData = Task.Run(async () => await new HttpClient().GetStringAsync(FFMPEG_API_URL)).Result;
+#nullable enable
+            JsonObject? jsonObj = JsonSerializer.Deserialize<JsonObject>(jsonData);
+#nullable disable
+
+            if (jsonObj != null)
+            {
+                var ffmpegURL = OSHelper.GetOSVersion() switch
+                {
+                    OSVersion.Windows => JsonPeeker(jsonObj, new string[] { "bin", "windows-64", "ffprobe" }),
+                    OSVersion.OSX => JsonPeeker(jsonObj, new string[] { "bin", "osx-64", "ffprobe" }),
+                    OSVersion.Linux => JsonPeeker(jsonObj, new string[] { "bin", "linux-64", "ffprobe" }),
+                    _ => throw new Exception("Your OS isn't supported")
+                };
+                var dataBytes = Task.Run(async () => await GetFileBytesAsync(ffmpegURL)).Result;
+                using var stream = new MemoryStream(dataBytes);
+                using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
+                if (archive.Entries.Count > 0)
+                {
+                    archive.Entries[0].ExtractToFile(Path.Combine(directoryPath, archive.Entries[0].FullName), true);
+                }
+            }
         }
 
         /// <summary>
