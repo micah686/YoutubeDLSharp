@@ -9,8 +9,10 @@ using YtDlpSharpLib.Converters;
 
 namespace YtDlpSharpLib.Metadata
 {
+    //https://github.com/yt-dlp/yt-dlp/blob/9c53b9a1b6b8914e4322263c97c26999f2e5832e/yt_dlp/extractor/common.py#L105-L403
     public class VideoInfo
     {
+        //Start Internal Data
         [JsonPropertyName("_type")]
         public MetadataType ResultType { get; set; }
         [JsonPropertyName("extractor")]
@@ -21,7 +23,7 @@ namespace YtDlpSharpLib.Metadata
         [JsonPropertyName("entries")]
         public VideoInfo[] Entries { get; set; }
 
-
+        //Start values from URL
         [JsonPropertyName("id")]
         public string ID { get; set; }
         [JsonPropertyName("title")]
@@ -56,17 +58,17 @@ namespace YtDlpSharpLib.Metadata
         [JsonPropertyName("creator")]
         public string Creator { get; set; }
         [JsonPropertyName("timestamp")]
-        public long? Timestamp { get; set; }
+        public DateTime? Timestamp { get; set; } // date as unix timestamp
         [JsonPropertyName("upload_date")]
         [JsonConverter(typeof(CustomDateTimeConverter))]
         public DateTime? UploadDate { get; set; } // date in UTC (YYYYMMDD).
         [JsonPropertyName("release_timestamp")]
-        public long? ReleaseTimestamp { get; set; } // date as unix timestamp
+        public DateTime? ReleaseTimestamp { get; set; } // date as unix timestamp
         [JsonPropertyName("release_date")]
         [JsonConverter(typeof(CustomDateTimeConverter))]
         public DateTime? ReleaseDate { get; set; } // date in UTC (YYYYMMDD).
         [JsonPropertyName("modified_timestamp")]
-        public long? ModifiedTimestamp { get; set; } // date as unix timestamp
+        public DateTime? ModifiedTimestamp { get; set; } // date as unix timestamp
         [JsonPropertyName("modified_date")]
         [JsonConverter(typeof(CustomDateTimeConverter))]
         public DateTime? ModifiedDate { get; set; } // date in UTC (YYYYMMDD).
@@ -91,10 +93,7 @@ namespace YtDlpSharpLib.Metadata
         [JsonPropertyName("duration")]
         public float? Duration { get; set; }
         [JsonPropertyName("view_count")]
-        public long? ViewCount { get; set; }
-
-        //concurrent_view
-
+        public long? ViewCount { get; set; }        
         [JsonPropertyName("like_count")]
         public long? LikeCount { get; set; }
         [JsonPropertyName("dislike_count")]
@@ -116,7 +115,7 @@ namespace YtDlpSharpLib.Metadata
         [JsonPropertyName("tags")]
         public string[] Tags { get; set; }
         [JsonPropertyName("cast")]
-        public string Cast { get; set; }//===============Validate if string or string array
+        public string Cast { get; set; }
         [JsonPropertyName("is_live")]
         public bool? IsLive { get; set; }
         [JsonPropertyName("was_live")]
@@ -136,7 +135,7 @@ namespace YtDlpSharpLib.Metadata
         [JsonPropertyName("chapter")]
         public string Chapter { get; set; }
         [JsonPropertyName("chapter_number")]
-        public int ChapterNumber { get; set; }
+        public int? ChapterNumber { get; set; }
         [JsonPropertyName("chapter_id")]
         public string ChapterId { get; set; }
         [JsonPropertyName("series")]
@@ -146,38 +145,37 @@ namespace YtDlpSharpLib.Metadata
         [JsonPropertyName("season")]
         public string Season { get;  set; }
         [JsonPropertyName("season_number")]
-        public int SeasonNumber { get; set; }
+        public int? SeasonNumber { get; set; }
         [JsonPropertyName("season_id")]
         public string SeasonId { get; set; }
         [JsonPropertyName("episode")]
         public string Episode { get; set; }
         [JsonPropertyName("episode_number")]
-        public int EpisodeNumber { get; set; }
+        public int? EpisodeNumber { get; set; }
         [JsonPropertyName("episode_id")]
         public string EpisodeId { get; set; }
         [JsonPropertyName("track")]
         public string Track { get; set; }
         [JsonPropertyName("track_number")]
-        public int TrackNumber { get; set; }
+        public int? TrackNumber { get; set; }
         [JsonPropertyName("track_id")]
         public string TrackId { get; set; }
         [JsonPropertyName("artist")]
-        public string Artist { get; set; }//===============Validate if string or string array
+        public string Artist { get; set; }
         [JsonPropertyName("genre")]
-        public string Genre { get; set; }//===============Validate if string or string array
+        public string Genre { get; set; }
         [JsonPropertyName("album")]
         public string Album { get; set; }
         [JsonPropertyName("album_type")]
         public string AlbumType { get; set; }
         [JsonPropertyName("album_artist")]
-        public string AlbumArtist { get; set; }//===============Validate if string or string array
+        public string AlbumArtist { get; set; }
         [JsonPropertyName("disc_number")]
-        public int DiscNumber { get; set; }
+        public int? DiscNumber { get; set; }
         [JsonPropertyName("release_year")]
         public string ReleaseYear { get; set; }
         [JsonPropertyName("composer")]
         public string Composter { get; set; }
-
         [JsonPropertyName("section_start")]
         public long? SectionStart { get; set; }
         [JsonPropertyName("section_end")]
@@ -187,6 +185,9 @@ namespace YtDlpSharpLib.Metadata
         [JsonPropertyName("columns")]
         public long? StoryboardFragmentColumns { get; set; }
 
+        //Unused Fields (These are fields that were excluded, but documented for future use:
+        //concurrent_view
+
         public override string ToString()
         {
             return JsonSerializer.Serialize(this, new JsonSerializerOptions
@@ -194,7 +195,6 @@ namespace YtDlpSharpLib.Metadata
                 WriteIndented = true
             });
         }
-
     }
 
 }

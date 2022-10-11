@@ -28,7 +28,7 @@ namespace YtDlpSharpLib.Metadata
         public string TextComment { get; set; }
 
         [JsonPropertyName("timestamp")]
-        public DateTime Timestamp { get; set; }
+        public DateTime Timestamp { get; set; } //UNIX Timestamp
 
         [JsonPropertyName("parent")]
         public string Parent { get; set; }
@@ -45,7 +45,7 @@ namespace YtDlpSharpLib.Metadata
         [JsonPropertyName("author_is_uploader")]
         public bool AuthorIsUploader { get; set; }
 
-        //time_text
-  
+        //Unused Fields (These are fields that were excluded, but documented for future use:
+        //time_text  
     }
 }

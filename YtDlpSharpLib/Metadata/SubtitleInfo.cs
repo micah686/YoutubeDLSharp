@@ -9,18 +9,19 @@ namespace YtDlpSharpLib.Metadata
 {
     public class SubtitleInfo
     {
-        [JsonPropertyName("ext")]
-        public string Ext { get; set; }
-
         [JsonPropertyName("data")]
         public string Data { get; set; }
 
-        //http_headers
+        [JsonPropertyName("url")]
+        public string Url { get; set; }
+
+        [JsonPropertyName("ext")]
+        public string Ext { get; set; }               
 
         [JsonPropertyName("name")]
         public string Name { get; set; }
-
-        [JsonPropertyName("url")]
-        public string Url { get; set; }
+        
+        //Unused Fields (These are fields that were excluded, but documented for future use:
+        //http_headers
     }
 }
