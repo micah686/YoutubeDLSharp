@@ -116,7 +116,7 @@ namespace YtDlpSharpLib
         /// <param name="flat">If set to true, does not extract information for each video in a playlist.</param>
         /// <param name="overrideOptions">Override options of the default option set for this run.</param>
         /// <returns>A RunResult object containing a VideoData object with the requested video information.</returns>
-        public async Task<RunResult<VideoData>> RunVideoDataFetch(string url,
+        public async Task<RunResult<VideoInfo>> RunVideoDataFetch(string url,
             CancellationToken ct = default, bool flat = true, OptionSet overrideOptions = null)
         {
             var opts = GetDownloadOptions();
@@ -126,11 +126,11 @@ namespace YtDlpSharpLib
             {
                 opts = opts.OverrideOptions(overrideOptions);
             }
-            VideoData videoData = null;
+            VideoInfo videoData = null;
             var process = new YtDlpProcess(YtDlpPath);
-            process.OutputReceived += (o, e) => videoData = JsonConvert.DeserializeObject<VideoData>(e.Data);
+            process.OutputReceived += (o, e) => videoData = JsonConvert.DeserializeObject<VideoInfo>(e.Data);
             (int code, string[] errors) = await runner.RunThrottled(process, new[] { url }, opts, ct);
-            return new RunResult<VideoData>(code == 0, errors, videoData);
+            return new RunResult<VideoInfo>(code == 0, errors, videoData);
         }
 
         #region Internal Download

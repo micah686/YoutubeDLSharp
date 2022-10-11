@@ -5,11 +5,23 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Text.Json.Serialization;
 using System.Text.Json;
+using YtDlpSharpLib.Converters;
 
 namespace YtDlpSharpLib.Metadata
 {
     public class VideoInfo
     {
+        [JsonPropertyName("_type")]
+        public MetadataType ResultType { get; set; }
+        [JsonPropertyName("extractor")]
+        public string Extractor { get; set; }
+        [JsonPropertyName("extractor_key")]
+        public string ExtractorKey { get; set; }
+        // If data refers to a playlist:
+        [JsonPropertyName("entries")]
+        public VideoInfo[] Entries { get; set; }
+
+
         [JsonPropertyName("id")]
         public string ID { get; set; }
         [JsonPropertyName("title")]
@@ -166,10 +178,6 @@ namespace YtDlpSharpLib.Metadata
         [JsonPropertyName("composer")]
         public string Composter { get; set; }
 
-
-
-
-
         [JsonPropertyName("section_start")]
         public long? SectionStart { get; set; }
         [JsonPropertyName("section_end")]
@@ -179,33 +187,6 @@ namespace YtDlpSharpLib.Metadata
         [JsonPropertyName("columns")]
         public long? StoryboardFragmentColumns { get; set; }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-        //======================================================
-        [JsonPropertyName("_type")]
-        public MetadataType ResultType { get; set; }
-       
-        [JsonPropertyName("extractor")]
-        public string Extractor { get; set; }
-        [JsonPropertyName("extractor_key")]
-        public string ExtractorKey { get; set; }
-
-        // If data refers to a playlist:
-        [JsonPropertyName("entries")]
-        public VideoData[] Entries { get; set; }
-
-
         public override string ToString()
         {
             return JsonSerializer.Serialize(this, new JsonSerializerOptions
@@ -214,11 +195,6 @@ namespace YtDlpSharpLib.Metadata
             });
         }
 
-
-
-
-
-
-    }    
+    }
 
 }
