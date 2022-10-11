@@ -5,10 +5,10 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using YtDlpSharpLib.Helpers;
 using YtDlpSharpLib.Metadata;
 using YtDlpSharpLib.Options;
+using System.Text.Json;
 
 namespace YtDlpSharpLib
 {
@@ -128,7 +128,7 @@ namespace YtDlpSharpLib
             }
             VideoInfo videoData = null;
             var process = new YtDlpProcess(YtDlpPath);
-            process.OutputReceived += (o, e) => videoData = JsonConvert.DeserializeObject<VideoInfo>(e.Data);
+            process.OutputReceived += (o, e) => videoData = JsonSerializer.Deserialize<VideoInfo>(e.Data);
             (int code, string[] errors) = await runner.RunThrottled(process, new[] { url }, opts, ct);
             return new RunResult<VideoInfo>(code == 0, errors, videoData);
         }
