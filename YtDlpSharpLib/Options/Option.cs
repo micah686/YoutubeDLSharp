@@ -6,7 +6,7 @@ using System.Linq;
 namespace YtDlpSharpLib.Options
 {
     /// <summary>
-    /// Represents one youtube-dl option.
+    /// Represents one yt-dlp option.
     /// </summary>
     /// <typeparam name="T">The type of the option.</typeparam>
     public class Option<T> : IOption

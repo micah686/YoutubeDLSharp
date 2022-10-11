@@ -1,7 +1,7 @@
 ﻿namespace YtDlpSharpLib.Options
 {
     /// <summary>
-    /// Interface for one youtube-dl option.
+    /// Interface for one yt-dlp option.
     /// </summary>
     public interface IOption
     {

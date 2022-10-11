@@ -3,11 +3,11 @@
   <PropertyGroup>
     <TargetFrameworks>net6.0</TargetFrameworks>
     <Authors>Bluegrams</Authors>
-    <Description>A simple .NET wrapper library for youtube-dl.</Description>
+    <Description>A simple .NET wrapper library for yt-dlp.</Description>
     <Copyright>© 2022 Bluegrams</Copyright>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/Bluegrams/YoutubeDLSharp</PackageProjectUrl>
-    <PackageTags>youtube video download youtube-dl yt-dlp</PackageTags>
+    <PackageTags>youtube video download yt-dlp yt-dlp</PackageTags>
     <LangVersion>latest</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>

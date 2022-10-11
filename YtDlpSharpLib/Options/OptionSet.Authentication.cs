@@ -56,7 +56,7 @@
         /// <summary>
         /// Multiple-system operator account
         /// password. If this option is left out,
-        /// youtube-dl will ask interactively.
+        /// yt-dlp will ask interactively.
         /// </summary>
         public string ApPassword { get => _apPassword.Value; set => _apPassword.Value = value; }
         /// <summary>

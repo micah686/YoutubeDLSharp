@@ -165,7 +165,7 @@
         public bool NoColors { get => _noColors.Value; set => _noColors.Value = value; }
         /// <summary>
         /// Options that can help keep compatibility
-        /// with youtube-dl or youtube-dlc
+        /// with yt-dlp
         /// configurations by reverting some of the
         /// changes made in yt-dlp. See "Differences in
         /// default behavior" for details
