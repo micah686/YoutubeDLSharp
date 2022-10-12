@@ -30,7 +30,7 @@ namespace YtDlpSharpLib.Tests
             Assert.AreEqual(MetadataType.Video, result.Data.ResultType);
             Assert.AreEqual("TEST VIDEO", result.Data.Title);
             Assert.AreEqual("Youtube", result.Data.ExtractorKey);
-            Assert.AreEqual(new DateTime(2007, 02, 21), result.Data.UploadDate);
+            Assert.AreEqual(new DateOnly(2007, 02, 21), result.Data.UploadDate);
             Assert.IsNotNull(result.Data.Formats);
             Assert.IsNotNull(result.Data.Tags);
             Assert.IsNull(result.Data.Entries);

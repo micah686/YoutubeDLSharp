@@ -13,7 +13,8 @@ namespace YtDlpSharpLib.Metadata
     public class VideoInfo
     {
         //Start Internal Data
-        [JsonPropertyName("_type")]
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        [JsonPropertyName("_type")]        
         public MetadataType ResultType { get; set; }
         [JsonPropertyName("extractor")]
         public string Extractor { get; set; }
@@ -22,7 +23,6 @@ namespace YtDlpSharpLib.Metadata
         // If data refers to a playlist:
         [JsonPropertyName("entries")]
         public VideoInfo[] Entries { get; set; }
-
         //Start values from URL
         [JsonPropertyName("id")]
         public string ID { get; set; }
@@ -59,19 +59,19 @@ namespace YtDlpSharpLib.Metadata
         public string Creator { get; set; }
         [JsonPropertyName("timestamp")]
         public DateTime? Timestamp { get; set; } // date as unix timestamp
-        [JsonPropertyName("upload_date")]
-        [JsonConverter(typeof(CustomDateTimeConverter))]
-        public DateTime? UploadDate { get; set; } // date in UTC (YYYYMMDD).
+        [JsonConverter(typeof(CustomDateOnlyConverter))]
+        [JsonPropertyName("upload_date")]        
+        public DateOnly? UploadDate { get; set; } // date in UTC (YYYYMMDD).
         [JsonPropertyName("release_timestamp")]
         public DateTime? ReleaseTimestamp { get; set; } // date as unix timestamp
-        [JsonPropertyName("release_date")]
-        [JsonConverter(typeof(CustomDateTimeConverter))]
-        public DateTime? ReleaseDate { get; set; } // date in UTC (YYYYMMDD).
+        [JsonConverter(typeof(CustomDateOnlyConverter))]
+        [JsonPropertyName("release_date")]        
+        public DateOnly? ReleaseDate { get; set; } // date in UTC (YYYYMMDD).
         [JsonPropertyName("modified_timestamp")]
         public DateTime? ModifiedTimestamp { get; set; } // date as unix timestamp
-        [JsonPropertyName("modified_date")]
-        [JsonConverter(typeof(CustomDateTimeConverter))]
-        public DateTime? ModifiedDate { get; set; } // date in UTC (YYYYMMDD).
+        [JsonConverter(typeof(CustomDateOnlyConverter))]
+        [JsonPropertyName("modified_date")]        
+        public DateOnly? ModifiedDate { get; set; } // date in UTC (YYYYMMDD).
         [JsonPropertyName("uploader_id")]
         public string UploaderID { get; set; }
         [JsonPropertyName("uploader_url")]
@@ -121,15 +121,16 @@ namespace YtDlpSharpLib.Metadata
         [JsonPropertyName("was_live")]
         public bool? WasLive { get; set; }
         [JsonPropertyName("live_status")]
-        public LiveStatus LiveStatus { get; set; }
+        public LiveStatus? LiveStatus { get; set; }
         [JsonPropertyName("start_time")]
         public float? StartTime { get; set; }
         [JsonPropertyName("end_time")]
         public float? EndTime { get; set; }
-        [JsonPropertyName("playable_in_embed")]
-        public string PlayableInEmbed { get; set; }
-        [JsonPropertyName("availability")]
-        public Availability Availability { get; set; }
+        [JsonPropertyName("playable_in_embed")]        
+        public object PlayableInEmbed { get; set; } //does this really need to be an object, or can we convert it to a string
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        [JsonPropertyName("availability")]        
+        public Availability? Availability { get; set; }
         [JsonPropertyName("chapters")]
         public ChapterInfo[] Chapters { get; set; }
         [JsonPropertyName("chapter")]
