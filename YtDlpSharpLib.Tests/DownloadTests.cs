@@ -12,7 +12,7 @@ namespace YtDlpSharpLib.Tests
     {
         private const string URL = "https://www.youtube.com/watch?v=C0DPdy98e4c";
         private static YtDlp _ydl;
-        private static List<string> downloadedFiles;
+        private static List<string> downloadedFiles = new List<string>();
 
         [ClassInitialize]
         public static void Initialize(TestContext context)
@@ -22,7 +22,6 @@ namespace YtDlpSharpLib.Tests
                 YtDlpPath = Utils.YtDlpBinaryName(),
                 FFmpegPath = Utils.FfmpegBinaryName()
             };
-            downloadedFiles = new List<string>();
         }
 
         [TestMethod]
