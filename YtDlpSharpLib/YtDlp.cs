@@ -187,10 +187,7 @@ namespace YtDlpSharpLib
             DownloadMergeFormat mergeFormat = DownloadMergeFormat.Unspecified, VideoRecodeFormat recodeFormat = VideoRecodeFormat.None, AudioConversionFormat audioFormat = AudioConversionFormat.Best, OptionSet overrideOptions = null)
         {
             var options = GetDownloadOptions();
-            if (overrideOptions != null)
-            {
-                options = options.OverrideOptions(overrideOptions);
-            }
+            
             if (audioOnly == false)
             {
                 options.Format = format;
@@ -209,6 +206,10 @@ namespace YtDlpSharpLib
                 options.PlaylistItems = $"{start}:{end}";
                 if (items != null)
                     options.PlaylistItems = string.Join(",", items);
+            }
+            if (overrideOptions != null)
+            {
+                options = options.OverrideOptions(overrideOptions);
             }
             return options;
         }
