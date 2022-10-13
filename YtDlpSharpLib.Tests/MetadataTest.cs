@@ -15,7 +15,7 @@ namespace YtDlpSharpLib.Tests
         public async Task TestVideoInformationYoutube()
         {
             string url = "https://www.youtube.com/watch?v=C0DPdy98e4c&t=9s";
-            RunResult<VideoInfo> result = await _ydl.RunVideoDataFetch(url);
+            RunResult<VideoInfo> result = await _ydl.GetVideoMetadata(url);
             Assert.IsTrue(result.Success);
             Assert.AreEqual(MetadataType.Video, result.Data.ResultType);
             Assert.AreEqual("TEST VIDEO", result.Data.Title);
@@ -30,7 +30,7 @@ namespace YtDlpSharpLib.Tests
         public async Task TestVideoInformationVimeo()
         {
             string url = "https://vimeo.com/23608259";
-            RunResult<VideoInfo> result = await _ydl.RunVideoDataFetch(url);
+            RunResult<VideoInfo> result = await _ydl.GetVideoMetadata(url);
             Assert.IsTrue(result.Success);
             Assert.AreEqual(MetadataType.Video, result.Data.ResultType);
             Assert.AreEqual("Cats in Tanks", result.Data.Title);
@@ -44,7 +44,7 @@ namespace YtDlpSharpLib.Tests
         public async Task TestPlaylistInformation()
         {
             string url = "https://www.youtube.com/playlist?list=PLD8804CB40CAB0EA5";
-            RunResult<VideoInfo> result = await _ydl.RunVideoDataFetch(url);
+            RunResult<VideoInfo> result = await _ydl.GetVideoMetadata(url);
             Assert.IsTrue(result.Success);
             Assert.AreEqual(MetadataType.Playlist, result.Data.ResultType);
             Assert.AreEqual("E.Grieg Peer Gynt Suite playlist", result.Data.Title);

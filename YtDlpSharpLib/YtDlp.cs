@@ -116,7 +116,7 @@ namespace YtDlpSharpLib
         /// <param name="flat">If set to true, does not extract information for each video in a playlist.</param>
         /// <param name="overrideOptions">Override options of the default option set for this run.</param>
         /// <returns>A RunResult object containing a VideoData object with the requested video information.</returns>
-        public async Task<RunResult<VideoInfo>> RunVideoDataFetch(string url,
+        public async Task<RunResult<VideoInfo>> GetVideoMetadata(string url,
             CancellationToken ct = default, bool flat = true, OptionSet overrideOptions = null)
         {
             var opts = GetDownloadOptions();
@@ -268,7 +268,7 @@ namespace YtDlpSharpLib
         /// <param name="output">A progress provider used to capture the standard output.</param>
         /// <param name="overrideOptions">Override options of the default option set for this run.</param>
         /// <returns>A RunResult object containing the paths to the downloaded and converted videos.</returns>
-        public async Task<RunResult<string[]>> RunVideoPlaylistDownload(string url,
+        public async Task<RunResult<string[]>> DownloadVideoPlaylist(string url,
             int? start = 1, int? end = null,
             int[] items = null,
             string format = "bestvideo+bestaudio/best",
@@ -292,7 +292,7 @@ namespace YtDlpSharpLib
         /// <param name="output">A progress provider used to capture the standard output.</param>
         /// <param name="overrideOptions">Override options of the default option set for this run.</param>
         /// <returns>A RunResult object containing the paths to the downloaded and converted videos.</returns>
-        public async Task<RunResult<string[]>> RunAudioPlaylistDownload(string url,
+        public async Task<RunResult<string[]>> DownloadAudioPlaylist(string url,
             int? start = 1, int? end = null,
             int[] items = null, AudioConversionFormat audioFormat = AudioConversionFormat.Best,
             CancellationToken ct = default, IProgress<DownloadProgress> progress = null,
