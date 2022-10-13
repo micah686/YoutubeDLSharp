@@ -60,17 +60,17 @@ namespace YtDlpSharpLib.Metadata
         [JsonConverter(typeof(UnixTimestampConverter))]
         [JsonPropertyName("timestamp")]
         public DateTime? Timestamp { get; set; } // date as unix timestamp
-        [JsonConverter(typeof(DateTimeConverters))]
+        [JsonConverter(typeof(DateTimeConverter))]
         [JsonPropertyName("upload_date")]        
         public DateOnly? UploadDate { get; set; } // date in UTC (YYYYMMDD).
         [JsonPropertyName("release_timestamp")]
         public DateTime? ReleaseTimestamp { get; set; } // date as unix timestamp
-        [JsonConverter(typeof(DateTimeConverters))]
+        [JsonConverter(typeof(DateTimeConverter))]
         [JsonPropertyName("release_date")]        
         public DateOnly? ReleaseDate { get; set; } // date in UTC (YYYYMMDD).
         [JsonPropertyName("modified_timestamp")]
         public DateTime? ModifiedTimestamp { get; set; } // date as unix timestamp
-        [JsonConverter(typeof(DateTimeConverters))]
+        [JsonConverter(typeof(DateTimeConverter))]
         [JsonPropertyName("modified_date")]        
         public DateOnly? ModifiedDate { get; set; } // date in UTC (YYYYMMDD).
         [JsonPropertyName("uploader_id")]
@@ -128,7 +128,7 @@ namespace YtDlpSharpLib.Metadata
         [JsonPropertyName("end_time")]
         public float? EndTime { get; set; }
         [JsonPropertyName("playable_in_embed")]        
-        public object PlayableInEmbed { get; set; } //does this really need to be an object, or can we convert it to a string
+        public string PlayableInEmbed { get; set; } 
         [JsonConverter(typeof(JsonStringEnumConverter))]
         [JsonPropertyName("availability")]        
         public Availability? Availability { get; set; }

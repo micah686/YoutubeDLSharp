@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace YtDlpSharpLib.Converters
 {    
-    internal class DateTimeConverters : JsonConverter<DateOnly>
+    internal class DateTimeConverter : JsonConverter<DateOnly>
     {
         public override DateOnly Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
