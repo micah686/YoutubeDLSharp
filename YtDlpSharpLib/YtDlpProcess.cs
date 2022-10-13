@@ -26,13 +26,6 @@ namespace YtDlpSharpLib
         private static readonly Regex rgxPost = new Regex(@"\[(\w+)\]\s+", RegexOptions.Compiled);
 
         /// <summary>
-        /// The path to the Python interpreter.
-        /// If this property is non-empty, yt-dlp will be run using the Python interpreter.
-        /// In this case, ExecutablePath should point to a non-binary, Python version of yt-dlp.
-        /// </summary>
-        public string PythonPath { get; set; }
-
-        /// <summary>
         /// The path to the yt-dlp executable.
         /// </summary>
         public string ExecutablePath { get; set; }
@@ -88,16 +81,8 @@ namespace YtDlpSharpLib
                 RedirectStandardError = true
 
             };
-            if (!String.IsNullOrEmpty(PythonPath))
-            {
-                startInfo.FileName = PythonPath;
-                startInfo.Arguments = $"\"{ExecutablePath}\" {ConvertToArgs(urls, options)}";
-            }
-            else
-            {
-                startInfo.FileName = ExecutablePath;
-                startInfo.Arguments = ConvertToArgs(urls, options);
-            }
+            startInfo.FileName = ExecutablePath;
+            startInfo.Arguments = ConvertToArgs(urls, options);
             process.EnableRaisingEvents = true;
             process.StartInfo = startInfo;
             var tcsOut = new TaskCompletionSource<bool>();
