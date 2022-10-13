@@ -57,19 +57,20 @@ namespace YtDlpSharpLib.Metadata
         public string License { get; set; }
         [JsonPropertyName("creator")]
         public string Creator { get; set; }
+        [JsonConverter(typeof(UnixTimestampConverter))]
         [JsonPropertyName("timestamp")]
         public DateTime? Timestamp { get; set; } // date as unix timestamp
-        [JsonConverter(typeof(CustomDateOnlyConverter))]
+        [JsonConverter(typeof(DateTimeConverters))]
         [JsonPropertyName("upload_date")]        
         public DateOnly? UploadDate { get; set; } // date in UTC (YYYYMMDD).
         [JsonPropertyName("release_timestamp")]
         public DateTime? ReleaseTimestamp { get; set; } // date as unix timestamp
-        [JsonConverter(typeof(CustomDateOnlyConverter))]
+        [JsonConverter(typeof(DateTimeConverters))]
         [JsonPropertyName("release_date")]        
         public DateOnly? ReleaseDate { get; set; } // date in UTC (YYYYMMDD).
         [JsonPropertyName("modified_timestamp")]
         public DateTime? ModifiedTimestamp { get; set; } // date as unix timestamp
-        [JsonConverter(typeof(CustomDateOnlyConverter))]
+        [JsonConverter(typeof(DateTimeConverters))]
         [JsonPropertyName("modified_date")]        
         public DateOnly? ModifiedDate { get; set; } // date in UTC (YYYYMMDD).
         [JsonPropertyName("uploader_id")]

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace YtDlpSharpLib.Converters
 {    
-    internal class CustomDateOnlyConverter : JsonConverter<DateOnly>
+    internal class DateTimeConverters : JsonConverter<DateOnly>
     {
         public override DateOnly Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
@@ -17,6 +17,19 @@ namespace YtDlpSharpLib.Converters
         }
 
         public override void Write(Utf8JsonWriter writer, DateOnly value, JsonSerializerOptions options)
+        {
+            writer.WriteStringValue(value.ToString());
+        }
+    }
+
+    internal class UnixTimestampConverter : JsonConverter<DateTime>
+    {
+        public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            return DateTimeOffset.FromUnixTimeSeconds(reader.GetInt64()).UtcDateTime;            
+        }
+
+        public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
         {
             writer.WriteStringValue(value.ToString());
         }
