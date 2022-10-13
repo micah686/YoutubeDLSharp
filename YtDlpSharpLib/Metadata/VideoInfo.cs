@@ -180,6 +180,7 @@ namespace YtDlpSharpLib.Metadata
         [JsonPropertyName("end_time")]
         public float? EndTime { get; set; }
 
+        [JsonConverter(typeof(ObjectToStringConverter))]
         [JsonPropertyName("playable_in_embed")]        
         public string PlayableInEmbed { get; set; } 
 
