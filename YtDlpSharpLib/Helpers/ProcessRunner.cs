@@ -1,11 +1,12 @@
-﻿using System;
+﻿//https://github.com/Bluegrams/YoutubeDLSharp
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using YtDlpSharpLib.Options;
 
 namespace YtDlpSharpLib.Helpers
-{
+{    
     /// <summary>
     /// Provides methods for throttled execution of processes.
     /// </summary>

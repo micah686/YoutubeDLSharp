@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+//https://github.com/Bluegrams/YoutubeDLSharp
 using YtDlpSharpLib.Helpers;
 using YtDlpSharpLib.Options;
 
