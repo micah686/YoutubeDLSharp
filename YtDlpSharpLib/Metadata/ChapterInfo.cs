@@ -12,8 +12,10 @@ namespace YtDlpSharpLib.Metadata
     {
         [JsonPropertyName("start_time")]
         public long StartTime { get; set; }
+
         [JsonPropertyName("end_time")]
         public long EndTime { get; set; }
+
         [JsonPropertyName("title")]
         public string Title { get; set; }
     }
