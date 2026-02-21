@@ -5,32 +5,52 @@ namespace YtdlpPocoGenerator.Generation;
 
 /// <summary>
 /// Generates C# POCO class source files from parsed field definitions.
+/// All output is driven by the parsed data — no hardcoded field lists.
 /// </summary>
 public static class PocoGenerator
 {
     private const string Namespace = "YtdlpPoco";
     private const string SourceUrl = "https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/extractor/common.py";
 
-    public static Dictionary<string, string> GenerateAll(
-        List<FieldDefinition> videoFields,
-        List<FieldDefinition> formatFields)
+    /// <summary>
+    /// Generates all POCO files from the top-level field definitions parsed
+    /// from common.py. Fields with sub-fields produce nested class files.
+    /// </summary>
+    /// <param name="topLevelFields">Fields parsed from the info_dict docstring.</param>
+    /// <returns>Map of filename → file content to write to disk.</returns>
+    public static Dictionary<string, string> GenerateAll(List<FieldDefinition> topLevelFields)
     {
-        var files = new Dictionary<string, string>();
+        var files = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        files["VideoData.cs"] = GenerateVideoData(videoFields);
-        files["FormatData.cs"] = GenerateFormatData(formatFields);
-        files["ThumbnailData.cs"] = GenerateThumbnailData();
-        files["SubtitleData.cs"] = GenerateSubtitleData();
-        files["ChapterData.cs"] = GenerateChapterData();
-        files["CommentData.cs"] = GenerateCommentData();
+        // Main metadata class — always VideoData.
+        files["VideoData.cs"] = GenerateVideoData(topLevelFields);
+
+        // One nested class file per field that has sub-fields.
+        // Deduplicate by class name in case two fields share a name after singularization.
+        var generatedClasses = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var field in topLevelFields.Where(f => f.SubFields.Count > 0))
+        {
+            // entries is self-referential (VideoData[]) — no separate class needed.
+            if (field.Name == "entries") continue;
+
+            var className = TypeMapper.ToNestedClassName(field.Name);
+            if (!generatedClasses.Add(className)) continue;
+
+            files[$"{className}.cs"] = GenerateNestedClass(className, field);
+        }
 
         return files;
     }
 
+    // ------------------------------------------------------------------
+    // VideoData
+    // ------------------------------------------------------------------
+
     private static string GenerateVideoData(List<FieldDefinition> fields)
     {
         var sb = new StringBuilder();
-        WriteHeader(sb, SourceUrl, "VideoData");
+        WriteHeader(sb);
 
         sb.AppendLine("/// <summary>");
         sb.AppendLine("/// Represents video metadata as extracted by yt-dlp.");
@@ -40,257 +60,105 @@ public static class PocoGenerator
         sb.AppendLine("public class VideoData");
         sb.AppendLine("{");
 
-        // Add _type field first (not in docstring but important)
-        WriteProperty(sb, "_type", "ResultType", "string?", "The result type: video, playlist, url, etc.");
+        // _type is added by yt-dlp at runtime and never in the docstring
+        // (the leading underscore prevents it matching the field regex).
+        WriteProperty(sb, "_type", "ResultType", "string?",
+            "The result type: video, playlist, url, url_transparent, multi_video.");
 
-        // Mandatory fields first
-        var priorityFields = new[] { "id", "title", "formats", "url", "ext", "format_id", "format" };
-        foreach (var name in priorityFields)
+        // Emit priority fields first for readability, then the rest in docstring order.
+        var priority = new[] { "id", "title", "formats", "url", "ext", "format_id", "format" };
+
+        foreach (var name in priority)
         {
-            var field = fields.FirstOrDefault(f => f.Name == name);
-            if (field is not null)
-                WriteFieldProperty(sb, field);
+            var f = fields.FirstOrDefault(x => x.Name == name);
+            if (f is not null) WriteFieldProperty(sb, f, fields);
         }
 
-        // Remaining fields
-        foreach (var field in fields)
+        foreach (var f in fields)
         {
-            if (Array.IndexOf(priorityFields, field.Name) >= 0) continue;
-            WriteFieldProperty(sb, field);
+            if (Array.IndexOf(priority, f.Name) >= 0) continue;
+            WriteFieldProperty(sb, f, fields);
         }
-
-        // Extra fields commonly present but not always in docstring
-        AppendExtraVideoFields(sb, fields);
 
         sb.AppendLine("}");
-        CloseFile(sb);
         return sb.ToString();
     }
 
-    private static string GenerateFormatData(List<FieldDefinition> fields)
+    // ------------------------------------------------------------------
+    // Nested classes (FormatData, ThumbnailData, ChapterData, …)
+    // ------------------------------------------------------------------
+
+    private static string GenerateNestedClass(string className, FieldDefinition parentField)
     {
         var sb = new StringBuilder();
-        WriteHeader(sb, SourceUrl, "FormatData");
+        WriteHeader(sb);
 
-        sb.AppendLine("/// <summary>");
-        sb.AppendLine("/// Represents one available download format for a video as extracted by yt-dlp.");
+        // Build a human-readable summary from the parent field's description.
+        var summary = TruncateSummary(parentField.Description);
+        sb.AppendLine($"/// <summary>");
+        sb.AppendLine($"/// {EscapeXml(summary)}");
         sb.AppendLine("/// This file is auto-generated by YtdlpPocoGenerator.");
         sb.AppendLine("/// </summary>");
-        sb.AppendLine("public class FormatData");
+        sb.AppendLine($"public class {className}");
         sb.AppendLine("{");
 
-        var seen = new HashSet<string>();
-
-        foreach (var field in fields)
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var sub in parentField.SubFields)
         {
-            if (seen.Add(field.Name))
-                WriteFieldProperty(sb, field);
+            if (seen.Add(sub.Name))
+                WriteSubFieldProperty(sb, sub);
         }
 
-        AppendExtraFormatFields(sb, seen);
-
         sb.AppendLine("}");
-        CloseFile(sb);
         return sb.ToString();
     }
 
-    private static string GenerateThumbnailData()
-    {
-        var sb = new StringBuilder();
-        WriteHeader(sb, SourceUrl, "ThumbnailData");
+    // ------------------------------------------------------------------
+    // Property writers
+    // ------------------------------------------------------------------
 
-        sb.AppendLine("/// <summary>Represents a thumbnail image for a video.</summary>");
-        sb.AppendLine("public class ThumbnailData");
-        sb.AppendLine("{");
-        WriteProperty(sb, "id", "Id", "string?", "Thumbnail format ID.");
-        WriteProperty(sb, "url", "Url", "string?", "URL of the thumbnail.");
-        WriteProperty(sb, "preference", "Preference", "int?", "Quality preference of the thumbnail.");
-        WriteProperty(sb, "width", "Width", "int?", "Thumbnail width in pixels.");
-        WriteProperty(sb, "height", "Height", "int?", "Thumbnail height in pixels.");
-        WriteProperty(sb, "resolution", "Resolution", "string?", "Resolution string (e.g. 1920x1080).");
-        WriteProperty(sb, "filesize", "Filesize", "long?", "Thumbnail file size in bytes.");
-        sb.AppendLine("}");
-        CloseFile(sb);
-        return sb.ToString();
-    }
-
-    private static string GenerateSubtitleData()
-    {
-        var sb = new StringBuilder();
-        WriteHeader(sb, SourceUrl, "SubtitleData");
-
-        sb.AppendLine("/// <summary>Represents one subtitle format for a given language.</summary>");
-        sb.AppendLine("public class SubtitleData");
-        sb.AppendLine("{");
-        WriteProperty(sb, "ext", "Ext", "string?", "Subtitle file extension.");
-        WriteProperty(sb, "url", "Url", "string?", "URL to the subtitle file.");
-        WriteProperty(sb, "data", "Data", "string?", "Inline subtitle data.");
-        WriteProperty(sb, "name", "Name", "string?", "Human-readable subtitle format name.");
-        sb.AppendLine("}");
-        CloseFile(sb);
-        return sb.ToString();
-    }
-
-    private static string GenerateChapterData()
-    {
-        var sb = new StringBuilder();
-        WriteHeader(sb, SourceUrl, "ChapterData");
-
-        sb.AppendLine("/// <summary>Represents a chapter within a video.</summary>");
-        sb.AppendLine("public class ChapterData");
-        sb.AppendLine("{");
-        WriteProperty(sb, "start_time", "StartTime", "float?", "Chapter start time in seconds.");
-        WriteProperty(sb, "end_time", "EndTime", "float?", "Chapter end time in seconds.");
-        WriteProperty(sb, "title", "Title", "string?", "Chapter title.");
-        sb.AppendLine("}");
-        CloseFile(sb);
-        return sb.ToString();
-    }
-
-    private static string GenerateCommentData()
-    {
-        var sb = new StringBuilder();
-        WriteHeader(sb, SourceUrl, "CommentData");
-
-        sb.AppendLine("/// <summary>Represents a comment on a video.</summary>");
-        sb.AppendLine("public class CommentData");
-        sb.AppendLine("{");
-        WriteProperty(sb, "id", "Id", "string?", "Comment identifier.");
-        WriteProperty(sb, "text", "Text", "string?", "Comment text.");
-        WriteProperty(sb, "author", "Author", "string?", "Comment author name.");
-        WriteProperty(sb, "author_id", "AuthorId", "string?", "Comment author identifier.");
-        WriteProperty(sb, "author_url", "AuthorUrl", "string?", "URL to the comment author's profile.");
-        WriteProperty(sb, "author_thumbnail", "AuthorThumbnail", "string?", "URL to the author's thumbnail.");
-        WriteProperty(sb, "parent", "Parent", "string?", "Parent comment ID for replies.");
-        WriteProperty(sb, "timestamp", "Timestamp", "long?", "UNIX timestamp of the comment.");
-        WriteProperty(sb, "like_count", "LikeCount", "long?", "Number of likes on the comment.");
-        WriteProperty(sb, "dislike_count", "DislikeCount", "long?", "Number of dislikes on the comment.");
-        WriteProperty(sb, "is_favorited", "IsFavorited", "bool?", "Whether the comment is favorited by the uploader.");
-        WriteProperty(sb, "author_is_uploader", "AuthorIsUploader", "bool?", "Whether the commenter is the video uploader.");
-        sb.AppendLine("}");
-        CloseFile(sb);
-        return sb.ToString();
-    }
-
-    private static void AppendExtraVideoFields(StringBuilder sb, List<FieldDefinition> existingFields)
-    {
-        var existingNames = existingFields.Select(f => f.Name).ToHashSet();
-
-        // Fields that are always present but may not be in the parsed docstring
-        var extras = new (string json, string cs, string type, string summary)[]
-        {
-            ("extractor", "Extractor", "string?", "Name of the extractor that produced this result."),
-            ("extractor_key", "ExtractorKey", "string?", "Key of the extractor."),
-            ("entries", "Entries", "VideoData[]?", "Playlist entries (when ResultType is playlist)."),
-            ("direct", "Direct", "bool?", "Whether the URL is a direct media URL."),
-            ("player_url", "PlayerUrl", "string?", "URL of the Flash player for extracting the video."),
-            ("playable_in_embed", "PlayableInEmbed", "string?", "Whether the video is playable in embedded players."),
-            ("availability", "Availability", "string?", "Video availability: private, premium_only, subscriber_only, needs_auth, unlisted, public."),
-            ("live_status", "LiveStatus", "string?", "Live status: is_live, is_upcoming, was_live, not_live, post_live."),
-            ("concurrent_view_count", "ConcurrentViewCount", "long?", "Number of concurrent viewers for live streams."),
-            ("channel", "Channel", "string?", "Channel name."),
-            ("channel_id", "ChannelId", "string?", "Channel identifier."),
-            ("channel_url", "ChannelUrl", "string?", "Channel URL."),
-            ("channel_follower_count", "ChannelFollowerCount", "long?", "Number of channel followers."),
-            ("channel_is_verified", "ChannelIsVerified", "bool?", "Whether the channel is verified."),
-            ("series_id", "SeriesId", "string?", "Series identifier."),
-            ("season_id", "SeasonId", "string?", "Season identifier."),
-            ("episode_id", "EpisodeId", "string?", "Episode identifier."),
-            ("track_id", "TrackId", "string?", "Track identifier."),
-            ("album_type", "AlbumType", "string?", "Album type (e.g. single, album)."),
-            ("album_artist", "AlbumArtist", "string?", "Album artist name."),
-            ("disc_number", "DiscNumber", "int?", "Disc number within an album."),
-            ("composer", "Composer", "string?", "Composer of the track."),
-            ("section_start", "SectionStart", "long?", "Start of the desired section in bytes."),
-            ("section_end", "SectionEnd", "long?", "End of the desired section in bytes."),
-            ("rows", "Rows", "long?", "Number of rows in a storyboard fragment."),
-            ("columns", "Columns", "long?", "Number of columns in a storyboard fragment."),
-            ("dislike_count", "DislikeCount", "long?", "Number of negative ratings."),
-            ("repost_count", "RepostCount", "long?", "Number of reposts/shares."),
-            ("creator", "Creator", "string?", "Creator name."),
-            ("license", "License", "string?", "License name."),
-            ("location", "Location", "string?", "Physical location where the video was filmed."),
-            ("cast", "Cast", "string[]?", "List of cast members."),
-            ("release_year", "ReleaseYear", "int?", "Year of release."),
-            ("average_rating", "AverageRating", "double?", "Average user rating."),
-            ("webpage_url_basename", "WebpageUrlBasename", "string?", "Basename of the webpage URL."),
-            ("webpage_url_domain", "WebpageUrlDomain", "string?", "Domain of the webpage URL."),
-        };
-
-        foreach (var (json, cs, type, summary) in extras)
-        {
-            if (!existingNames.Contains(json))
-                WriteProperty(sb, json, cs, type, summary);
-        }
-    }
-
-    private static void AppendExtraFormatFields(StringBuilder sb, HashSet<string> seen)
-    {
-        var extras = new (string json, string cs, string type, string summary)[]
-        {
-            ("url", "Url", "string?", "The URL representing the media."),
-            ("manifest_url", "ManifestUrl", "string?", "The URL of the manifest for HLS/DASH streams."),
-            ("ext", "Ext", "string?", "File extension."),
-            ("format", "Format", "string?", "Human-readable format description."),
-            ("format_id", "FormatId", "string?", "Format identifier string."),
-            ("format_note", "FormatNote", "string?", "Additional information about the format."),
-            ("width", "Width", "int?", "Video width in pixels."),
-            ("height", "Height", "int?", "Video height in pixels."),
-            ("resolution", "Resolution", "string?", "Resolution as a string."),
-            ("dynamic_range", "DynamicRange", "string?", "Dynamic range (SDR, HDR10, etc.)."),
-            ("tbr", "Bitrate", "double?", "Average bitrate of audio and video in kbps."),
-            ("abr", "AudioBitrate", "double?", "Average audio bitrate in kbps."),
-            ("acodec", "AudioCodec", "string?", "Audio codec name."),
-            ("asr", "AudioSamplingRate", "double?", "Audio sampling rate in Hz."),
-            ("audio_channels", "AudioChannels", "int?", "Number of audio channels."),
-            ("vbr", "VideoBitrate", "double?", "Average video bitrate in kbps."),
-            ("fps", "FrameRate", "float?", "Frame rate."),
-            ("vcodec", "VideoCodec", "string?", "Video codec name."),
-            ("container", "ContainerFormat", "string?", "Container format name."),
-            ("filesize", "FileSize", "long?", "File size in bytes."),
-            ("filesize_approx", "ApproximateFileSize", "long?", "Approximate file size in bytes."),
-            ("protocol", "Protocol", "string?", "Download protocol (http, https, m3u8, dash, etc.)."),
-            ("fragment_base_url", "FragmentBaseUrl", "string?", "Base URL for fragment files."),
-            ("is_from_start", "IsFromStart", "bool?", "Whether livestream should be downloaded from start."),
-            ("preference", "Preference", "int?", "Format preference ordering."),
-            ("language", "Language", "string?", "Language code."),
-            ("language_preference", "LanguagePreference", "int?", "Language preference ordering."),
-            ("quality", "Quality", "double?", "Quality of the format."),
-            ("source_preference", "SourcePreference", "int?", "Source preference ordering."),
-            ("stretched_ratio", "StretchedRatio", "float?", "SAR (sample/pixel aspect ratio)."),
-            ("no_resume", "NoResume", "bool?", "Whether the download cannot be resumed."),
-            ("has_drm", "HasDrm", "bool?", "Whether the format has DRM protection."),
-        };
-
-        foreach (var (json, cs, type, summary) in extras)
-        {
-            if (seen.Add(json))
-                WriteProperty(sb, json, cs, type, summary);
-        }
-    }
-
-    private static void WriteFieldProperty(StringBuilder sb, FieldDefinition field)
+    private static void WriteFieldProperty(
+        StringBuilder sb,
+        FieldDefinition field,
+        IReadOnlyList<FieldDefinition>? allFields = null)
     {
         var csName = ToPascalCase(field.Name);
-        var csType = TypeMapper.MapType(field.Name, field.Description);
+        var csType = TypeMapper.MapType(field, allFields);
         WriteProperty(sb, field.Name, csName, csType, field.Description);
     }
 
-    private static void WriteProperty(StringBuilder sb, string jsonName, string csName, string csType, string summary)
+    private static void WriteSubFieldProperty(StringBuilder sb, FieldDefinition sub)
+    {
+        var csName = ToPascalCase(sub.Name);
+
+        // For sub-fields, use TypeMapper with the TypeHint populated.
+        var csType = TypeMapper.MapType(sub);
+        WriteProperty(sb, sub.Name, csName, csType, sub.Description);
+    }
+
+    private static void WriteProperty(
+        StringBuilder sb,
+        string jsonName,
+        string csName,
+        string csType,
+        string summary)
     {
         if (!string.IsNullOrWhiteSpace(summary))
-        {
-            sb.AppendLine($"    /// <summary>{EscapeXml(summary)}</summary>");
-        }
+            sb.AppendLine($"    /// <summary>{EscapeXml(TruncateSummary(summary))}</summary>");
+
         sb.AppendLine($"    [JsonPropertyName(\"{jsonName}\")]");
         sb.AppendLine($"    public {csType} {csName} {{ get; set; }}");
         sb.AppendLine();
     }
 
-    private static void WriteHeader(StringBuilder sb, string sourceUrl, string className)
+    // ------------------------------------------------------------------
+    // File header
+    // ------------------------------------------------------------------
+
+    private static void WriteHeader(StringBuilder sb)
     {
         sb.AppendLine("// <auto-generated/>");
-        sb.AppendLine($"// Source: {sourceUrl}");
+        sb.AppendLine($"// Source: {SourceUrl}");
         sb.AppendLine("// Run YtdlpPocoGenerator to regenerate this file.");
         sb.AppendLine();
         sb.AppendLine("#nullable enable");
@@ -302,22 +170,33 @@ public static class PocoGenerator
         sb.AppendLine();
     }
 
-    private static void CloseFile(StringBuilder sb)
-    {
-        // Nothing needed — file-scoped namespace is self-closing
-    }
+    // ------------------------------------------------------------------
+    // Helpers
+    // ------------------------------------------------------------------
 
     private static string ToPascalCase(string snake)
     {
-        // Handle common abbreviations first
         if (snake == "id") return "Id";
         if (snake == "url") return "Url";
         if (snake == "ext") return "Ext";
+        if (snake == "fps") return "Fps";
+        if (snake == "asr") return "Asr";
+        if (snake == "tbr") return "Tbr";
+        if (snake == "abr") return "Abr";
+        if (snake == "vbr") return "Vbr";
 
         return string.Concat(
             snake.Split('_')
-                 .Select(part => part.Length == 0 ? "" :
-                     char.ToUpperInvariant(part[0]) + part[1..]));
+                 .Select(p => p.Length == 0 ? "" : char.ToUpperInvariant(p[0]) + p[1..]));
+    }
+
+    private static string TruncateSummary(string text)
+    {
+        // Keep summaries short — stop at the first sentence boundary.
+        var idx = text.IndexOf('.');
+        if (idx > 0 && idx < 200) return text[..(idx + 1)].Trim();
+        if (text.Length > 200) return text[..200].Trim() + "…";
+        return text.Trim();
     }
 
     private static string EscapeXml(string text) =>

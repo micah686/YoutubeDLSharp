@@ -1,154 +1,77 @@
+using System.Text.RegularExpressions;
+using YtdlpPocoGenerator.Models;
+
 namespace YtdlpPocoGenerator.Generation;
 
 /// <summary>
-/// Maps yt-dlp Python field names and descriptions to C# types.
+/// Infers C# types for yt-dlp fields purely from the field name, description,
+/// inline type hints, and presence of sub-fields — no hardcoded field lists.
 /// </summary>
 public static class TypeMapper
 {
-    // Explicit overrides for fields with non-obvious types
-    private static readonly Dictionary<string, string> ExplicitTypes = new(StringComparer.OrdinalIgnoreCase)
+    // Matches "Like 'subtitles'" or "Same as 'formats'" in a description.
+    private static readonly Regex LikeReferenceRegex = new(
+        @"(?:like|same as)\s+'([a-z_]+)'",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    public static string MapType(FieldDefinition field,
+        IReadOnlyList<FieldDefinition>? allFields = null)
     {
-        // VideoData fields
-        ["id"] = "string?",
-        ["title"] = "string?",
-        ["alt_title"] = "string?",
-        ["display_id"] = "string?",
-        ["url"] = "string?",
-        ["ext"] = "string?",
-        ["format"] = "string?",
-        ["format_id"] = "string?",
-        ["format_note"] = "string?",
-        ["player_url"] = "string?",
-        ["description"] = "string?",
-        ["thumbnail"] = "string?",
-        ["thumbnails"] = "ThumbnailData[]?",
-        ["formats"] = "FormatData[]?",
-        ["subtitles"] = "Dictionary<string, SubtitleData[]>?",
-        ["automatic_captions"] = "Dictionary<string, SubtitleData[]>?",
-        ["chapters"] = "ChapterData[]?",
-        ["comments"] = "CommentData[]?",
-        ["entries"] = "VideoData[]?",
-        ["categories"] = "string[]?",
-        ["tags"] = "string[]?",
-        ["cast"] = "string[]?",
-        ["artists"] = "string[]?",
-        ["genres"] = "string[]?",
-        ["composers"] = "string[]?",
-        ["album_artists"] = "string[]?",
-        ["uploader"] = "string?",
-        ["uploader_id"] = "string?",
-        ["uploader_url"] = "string?",
-        ["channel"] = "string?",
-        ["channel_id"] = "string?",
-        ["channel_url"] = "string?",
-        ["channel_follower_count"] = "long?",
-        ["channel_is_verified"] = "bool?",
-        ["location"] = "string?",
-        ["license"] = "string?",
-        ["creator"] = "string?",
-        ["duration"] = "float?",
-        ["timestamp"] = "long?",
-        ["release_timestamp"] = "long?",
-        ["modified_timestamp"] = "long?",
-        ["upload_date"] = "string?",
-        ["release_date"] = "string?",
-        ["modified_date"] = "string?",
-        ["view_count"] = "long?",
-        ["concurrent_view_count"] = "long?",
-        ["like_count"] = "long?",
-        ["dislike_count"] = "long?",
-        ["repost_count"] = "long?",
-        ["comment_count"] = "long?",
-        ["average_rating"] = "double?",
-        ["age_limit"] = "int?",
-        ["webpage_url"] = "string?",
-        ["webpage_url_basename"] = "string?",
-        ["webpage_url_domain"] = "string?",
-        ["is_live"] = "bool?",
-        ["was_live"] = "bool?",
-        ["live_status"] = "string?",
-        ["start_time"] = "float?",
-        ["end_time"] = "float?",
-        ["playable_in_embed"] = "string?",
-        ["availability"] = "string?",
-        ["direct"] = "bool?",
-        ["chapter"] = "string?",
-        ["chapter_number"] = "int?",
-        ["chapter_id"] = "string?",
-        ["chapter_start_time"] = "float?",
-        ["chapter_end_time"] = "float?",
-        ["series"] = "string?",
-        ["series_id"] = "string?",
-        ["season"] = "string?",
-        ["season_number"] = "int?",
-        ["season_id"] = "string?",
-        ["episode"] = "string?",
-        ["episode_number"] = "int?",
-        ["episode_id"] = "string?",
-        ["track"] = "string?",
-        ["track_number"] = "int?",
-        ["track_id"] = "string?",
-        ["artist"] = "string?",
-        ["genre"] = "string?",
-        ["album"] = "string?",
-        ["album_type"] = "string?",
-        ["album_artist"] = "string?",
-        ["disc_number"] = "int?",
-        ["release_year"] = "int?",
-        ["composer"] = "string?",
-        ["section_start"] = "long?",
-        ["section_end"] = "long?",
-        ["rows"] = "long?",
-        ["columns"] = "long?",
-        ["extractor"] = "string?",
-        ["extractor_key"] = "string?",
+        var name = field.Name;
+        var desc = field.Description.ToLowerInvariant();
 
-        // FormatData fields
-        ["manifest_url"] = "string?",
-        ["width"] = "int?",
-        ["height"] = "int?",
-        ["resolution"] = "string?",
-        ["dynamic_range"] = "string?",
-        ["tbr"] = "double?",
-        ["abr"] = "double?",
-        ["acodec"] = "string?",
-        ["asr"] = "double?",
-        ["audio_channels"] = "int?",
-        ["vbr"] = "double?",
-        ["fps"] = "float?",
-        ["vcodec"] = "string?",
-        ["container"] = "string?",
-        ["filesize"] = "long?",
-        ["filesize_approx"] = "long?",
-        ["protocol"] = "string?",
-        ["fragment_base_url"] = "string?",
-        ["is_from_start"] = "bool?",
-        ["preference"] = "int?",
-        ["language"] = "string?",
-        ["language_preference"] = "int?",
-        ["quality"] = "double?",
-        ["source_preference"] = "int?",
-        ["stretched_ratio"] = "float?",
-        ["no_resume"] = "bool?",
-        ["has_drm"] = "bool?",
-    };
+        // Special case: self-referential playlist entries.
+        if (name == "entries")
+            return "VideoData[]?";
 
-    public static string MapType(string fieldName, string description)
-    {
-        if (ExplicitTypes.TryGetValue(fieldName, out var explicit_type))
-            return explicit_type;
+        // Fields with parsed sub-fields → complex object types.
+        if (field.SubFields.Count > 0)
+        {
+            var nestedClass = ToNestedClassName(name);
 
-        return InferFromNameAndDescription(fieldName, description);
-    }
+            // "dictionary in the format {tag: ...}" → Dictionary<string, T[]>?
+            // This pattern is used by subtitles and automatic_captions.
+            if (desc.Contains("dictionary") && (desc.Contains("in the format") || desc.Contains("{tag:") || desc.Contains("language")))
+                return $"Dictionary<string, {nestedClass}[]>?";
 
-    private static string InferFromNameAndDescription(string name, string desc)
-    {
-        var descLower = desc.ToLowerInvariant();
+            return $"{nestedClass}[]?";
+        }
 
-        // Name-based suffix rules
+        // Resolve "Like 'subtitles'" / "Same as 'formats'" cross-references.
+        // This handles automatic_captions and any future fields that defer to another field.
+        if (allFields is not null)
+        {
+            var likeMatch = LikeReferenceRegex.Match(desc);
+            if (likeMatch.Success)
+            {
+                var refName = likeMatch.Groups[1].Value;
+                var refField = allFields.FirstOrDefault(f => f.Name == refName);
+                if (refField is not null)
+                    // Resolve without allFields to prevent infinite recursion.
+                    return MapType(refField);
+            }
+        }
+
+        // Description contains "dictionary" → generic dictionary fallback.
+        if (desc.Contains("dictionary") || desc.Contains("in the format {"))
+            return "Dictionary<string, object[]>?";
+
+        // Explicit list-of-strings signals (categories, tags, cast, artists…)
+        if (IsListOfStrings(desc))
+            return "string[]?";
+
+        // Use inline type hint from docstring annotation (e.g. the "int" from "(optional, int)")
+        if (!string.IsNullOrEmpty(field.TypeHint))
+        {
+            var fromHint = MapTypeHint(field.TypeHint);
+            if (fromHint is not null)
+                return fromHint;
+        }
+
+        // Name-pattern rules — reliable for common suffixes.
         if (name.EndsWith("_count") || name.EndsWith("_number"))
             return "long?";
-        if (name.EndsWith("_url") || name.EndsWith("_key") || name.EndsWith("_note"))
+        if (name.EndsWith("_url"))
             return "string?";
         if (name.EndsWith("_timestamp"))
             return "long?";
@@ -156,22 +79,77 @@ public static class TypeMapper
             return "string?";
         if (name.EndsWith("_id"))
             return "string?";
+        if (name.EndsWith("_key") || name.EndsWith("_note") || name.EndsWith("_type"))
+            return "string?";
+        if (name.EndsWith("_year"))
+            return "int?";
 
-        // Description-based rules
-        if (descLower.Contains("list of") || descLower.Contains("a list"))
-            return "string[]?";
-        if (descLower.Contains("dictionary") || descLower.Contains("dict of"))
-            return "Dictionary<string, object>?";
-        if (descLower.StartsWith("boolean") || descLower.StartsWith("whether") ||
-            descLower.Contains("true/false") || descLower.Contains("true or false"))
+        // Boolean-name prefixes.
+        if (name.StartsWith("is_") || name.StartsWith("was_") ||
+            name.StartsWith("has_") || name.StartsWith("no_"))
             return "bool?";
-        if (descLower.Contains("integer") || descLower.Contains("number of") ||
-            descLower.Contains("count of"))
+
+        // Description-based rules.
+        if (desc.Contains("unix timestamp") || desc.Contains("posix timestamp"))
             return "long?";
-        if (descLower.Contains("float") || descLower.Contains("seconds") ||
-            descLower.Contains("bitrate") || descLower.Contains("fps"))
+        if (desc.StartsWith("whether") || desc.Contains("true/false") ||
+            desc.Contains("true or false") || desc.StartsWith("boolean"))
+            return "bool?";
+        if (desc.Contains("integer") || desc.Contains("number of") ||
+            desc.Contains("count of"))
+            return "long?";
+        if (desc.Contains("in seconds") || desc.Contains("length in seconds"))
+            return "float?";
+        if (desc.Contains("bitrate") || desc.Contains("kilobits per"))
             return "double?";
+        if (desc.Contains("in pixels"))
+            return "int?";
 
         return "string?";
+    }
+
+    /// <summary>
+    /// Derives the C# nested class name from a plural field name.
+    /// e.g. thumbnails → ThumbnailData, automatic_captions → AutomaticCaptionData
+    /// </summary>
+    public static string ToNestedClassName(string fieldName)
+    {
+        // Singularize: strip trailing 's' (thumbnails→thumbnail, formats→format…)
+        // Special-case 'ies' ending (entries→entry) — but "entries" is handled before this.
+        string singular;
+        if (fieldName.EndsWith("ies"))
+            singular = fieldName[..^3] + "y";
+        else if (fieldName.EndsWith("s") && fieldName.Length > 2)
+            singular = fieldName[..^1];
+        else
+            singular = fieldName;
+
+        // snake_case → PascalCase
+        var pascal = string.Concat(
+            singular.Split('_')
+                    .Select(p => p.Length > 0 ? char.ToUpperInvariant(p[0]) + p[1..] : ""));
+
+        return pascal + "Data";
+    }
+
+    // ------------------------------------------------------------------
+    // Helpers
+    // ------------------------------------------------------------------
+
+    private static bool IsListOfStrings(string desc) =>
+        (desc.Contains("list of str") ||
+         desc.Contains("list of tag") ||
+         desc.Contains("list of categor") ||
+         (desc.Contains("list of") && !desc.Contains("dict") && !desc.Contains("object"))) &&
+        !desc.Contains("list of dict");
+
+    private static string? MapTypeHint(string hint)
+    {
+        var h = hint.ToLowerInvariant().Trim();
+        if (h == "int" || h == "integer") return "int?";
+        if (h == "float") return "double?";
+        if (h == "bool" || h == "boolean") return "bool?";
+        if (h == "str" || h == "string") return "string?";
+        return null;
     }
 }

@@ -20,13 +20,27 @@ using (var client = new HttpClient())
 
 Console.WriteLine($"Fetched {source.Length:N0} characters. Parsing...");
 
-(var videoFields, var formatFields) = CommonPyParser.Parse(source);
+var fields = CommonPyParser.Parse(source);
 
-Console.WriteLine($"Found {videoFields.Count} video fields, {formatFields.Count} format fields.");
+var complexFields = fields.Where(f => f.SubFields.Count > 0 && f.Name != "entries").ToList();
+Console.WriteLine($"Found {fields.Count} top-level fields, " +
+                  $"{complexFields.Count} with nested sub-fields: " +
+                  $"{string.Join(", ", complexFields.Select(f => f.Name))}");
 
-var files = PocoGenerator.GenerateAll(videoFields, formatFields);
+var files = PocoGenerator.GenerateAll(fields);
 
 Directory.CreateDirectory(outputDir);
+
+// Remove stale generated files that no longer correspond to any parsed class.
+foreach (var existing in Directory.GetFiles(outputDir, "*.cs"))
+{
+    var name = Path.GetFileName(existing);
+    if (!files.ContainsKey(name))
+    {
+        File.Delete(existing);
+        Console.WriteLine($"  Removed stale: {existing}");
+    }
+}
 
 foreach (var (fileName, content) in files)
 {

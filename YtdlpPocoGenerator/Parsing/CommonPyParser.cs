@@ -4,75 +4,102 @@ using YtdlpPocoGenerator.Models;
 namespace YtdlpPocoGenerator.Parsing;
 
 /// <summary>
-/// Parses the InfoExtractor class docstring from yt-dlp's common.py
-/// to extract field definitions for the info_dict.
+/// Parses the InfoExtractor class docstring from yt-dlp's common.py to extract
+/// field definitions for the info_dict. Fully driven by the docstring content —
+/// no hardcoded field name lists.
 /// </summary>
 public static class CommonPyParser
 {
-    // Matches lines like:    id:             Video identifier.
-    // Group 1 = field name, Group 2 = description start
-    private static readonly Regex FieldLineRegex = new(
+    // Top-level field line: "    id:          Video identifier."
+    // Groups: (1) leading spaces, (2) field name, (3) description start
+    private static readonly Regex TopLevelFieldRegex = new(
         @"^( {4,8})([a-z][a-z0-9_]*):\s+(.+)$",
         RegexOptions.Compiled);
 
-    // Matches sub-field bullet lines like:  * "url"  or  * url (optional, int) - description
-    private static readonly Regex SubFieldRegex = new(
-        @"^\s+\*\s+[""']?([a-z][a-z0-9_]*)[""']?\s*(?:\(([^)]*)\))?\s*(?:[-–]\s*(.*))?$",
+    // Sub-field bullet. Three separator styles are used in common.py:
+    //   * url - description          (dash)
+    //   * "url": description         (colon, used in subtitles section)
+    //   * url        description     (two or more spaces, used in formats section)
+    //   * width (optional, int) - …  (type annotation + dash)
+    // Groups: (1) name, (2) type annotation, (3) description
+    private static readonly Regex SubFieldBulletRegex = new(
+        @"^\s+\*\s+[""']?([a-z][a-z0-9_]*)[""']?\s*(?:\(([^)]*)\))?\s*(?:[-–:]\s*|\s{2,})(.+)?$",
         RegexOptions.Compiled);
 
-    private static readonly Regex SectionHeaderRegex = new(
-        @"^\s*(Additionally|The following|Required|Optional|Each|Deprecated)",
+    // Lines that announce a new sub-section inside a field description.
+    // These are skipped (not committed as field data) but don't end field collection.
+    private static readonly Regex SubSectionAnnouncementRegex = new(
+        @"^\s*(Potential fields|NOTE:|NB:|e\.g\.|DEPRECATED)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    public static (List<FieldDefinition> VideoFields, List<FieldDefinition> FormatFields) Parse(string source)
+    // Phrases that signal the field-definition block is about to start.
+    private static readonly string[] FieldBlockTriggerPhrases =
+    [
+        "following field",
+        "result of the _real_extract",
+        "returns a dict",
+        "returned result",
+        "must be a dict",
+    ];
+
+    /// <summary>
+    /// Parses common.py and returns all top-level info_dict field definitions.
+    /// Fields that have nested bullet-point entries (thumbnails, formats, chapters…)
+    /// will have their <see cref="FieldDefinition.SubFields"/> populated from those bullets.
+    /// </summary>
+    public static List<FieldDefinition> Parse(string source)
     {
         var lines = source.Split('\n');
-        var docstringStart = FindDocstringStart(lines);
-        var docstringEnd = FindDocstringEnd(lines, docstringStart);
+        var (docStart, docEnd) = FindDocstring(lines);
 
-        if (docstringStart < 0 || docstringEnd < 0)
+        if (docStart < 0 || docEnd < 0)
             throw new InvalidOperationException("Could not find InfoExtractor class docstring.");
 
-        var docLines = lines[docstringStart..docstringEnd];
-
-        var videoFields = ParseFieldBlock(docLines, "format_dict", stopAt: "format_dict");
-        var formatFields = ParseFormatFields(docLines);
-
-        return (videoFields, formatFields);
+        return ParseAllFields(lines[docStart..docEnd]);
     }
 
-    private static int FindDocstringStart(string[] lines)
+    // ------------------------------------------------------------------
+    // Docstring boundary detection
+    // ------------------------------------------------------------------
+
+    private static (int Start, int End) FindDocstring(string[] lines)
     {
         bool inInfoExtractor = false;
+        int start = -1;
+
         for (int i = 0; i < lines.Length; i++)
         {
             if (lines[i].Contains("class InfoExtractor"))
                 inInfoExtractor = true;
 
-            if (inInfoExtractor && lines[i].TrimStart().StartsWith("\"\"\""))
-                return i;
+            if (!inInfoExtractor) continue;
+
+            if (lines[i].TrimStart().StartsWith("\"\"\""))
+            {
+                if (start < 0)
+                    start = i;
+                else
+                    return (start, i);
+            }
         }
-        return -1;
+        return (-1, -1);
     }
 
-    private static int FindDocstringEnd(string[] lines, int start)
-    {
-        if (start < 0) return -1;
-        for (int i = start + 1; i < lines.Length; i++)
-        {
-            var trimmed = lines[i].TrimStart();
-            if (trimmed.StartsWith("\"\"\""))
-                return i;
-        }
-        return -1;
-    }
+    // ------------------------------------------------------------------
+    // Field parsing
+    // ------------------------------------------------------------------
 
-    private static List<FieldDefinition> ParseFieldBlock(string[] lines, string startMarker, string stopAt)
+    private static List<FieldDefinition> ParseAllFields(string[] lines)
     {
         var fields = new List<FieldDefinition>();
-        bool inFieldBlock = false;
+
+        // Phase 1: wait for the trigger phrase that signals field defs are about to start.
+        bool fieldBlockStarted = false;
+
+        // Phase 2: once we see the first field line, lock in its indent level.
         int fieldIndent = -1;
 
+        // Accumulator state for the current top-level field being parsed.
         FieldDefinition? currentField = null;
         var currentDesc = new List<string>();
         bool inSubFields = false;
@@ -106,38 +133,37 @@ public static class CommonPyParser
             inSubFields = false;
         }
 
-        for (int i = 0; i < lines.Length; i++)
+        foreach (var line in lines)
         {
-            var line = lines[i];
             var trimmed = line.TrimEnd();
+            var content = trimmed.TrimStart();
 
-            // Detect stop marker (format_dict section begins)
-            if (stopAt == "format_dict" && trimmed.Contains("format_dict:") && trimmed.Contains("Potential fields"))
+            // Phase 1 — scan for the trigger that says fields are coming.
+            if (!fieldBlockStarted)
             {
-                CommitField();
-                break;
+                var lower = content.ToLowerInvariant();
+                if (FieldBlockTriggerPhrases.Any(t => lower.Contains(t)))
+                    fieldBlockStarted = true;
+                continue;
             }
 
-            // Check for field line
-            var fieldMatch = FieldLineRegex.Match(trimmed);
+            // Check for a new top-level field definition.
+            var fieldMatch = TopLevelFieldRegex.Match(trimmed);
             if (fieldMatch.Success)
             {
                 int indent = fieldMatch.Groups[1].Length;
 
-                // Start collecting once we see the first field-like line in the right indent range
-                if (!inFieldBlock && IsInfoDictField(fieldMatch.Groups[2].Value))
-                {
-                    inFieldBlock = true;
+                // The first field line we see establishes the canonical indent level.
+                if (fieldIndent < 0)
                     fieldIndent = indent;
-                }
 
-                if (inFieldBlock && indent == fieldIndent)
+                if (indent == fieldIndent)
                 {
                     CommitField();
                     currentField = new FieldDefinition
                     {
                         Name = fieldMatch.Groups[2].Value,
-                        IsOptional = false // will determine from section context
+                        IsOptional = false
                     };
                     currentDesc.Add(fieldMatch.Groups[3].Value.Trim());
                     inSubFields = false;
@@ -145,38 +171,41 @@ public static class CommonPyParser
                 }
             }
 
-            if (!inFieldBlock || currentField is null) continue;
+            if (currentField is null) continue;
 
-            // Check for sub-field bullet
-            var subMatch = SubFieldRegex.Match(trimmed);
-            if (subMatch.Success && trimmed.TrimStart().StartsWith("*"))
+            // Skip sub-section announcement lines — they're headers inside a field's
+            // description block, not data to collect (e.g. "Potential fields:").
+            if (SubSectionAnnouncementRegex.IsMatch(content))
+                continue;
+
+            // Sub-field bullet point.
+            if (content.StartsWith("*"))
             {
-                inSubFields = true;
-                CommitSubField();
-                currentSubField = new FieldDefinition
+                var subMatch = SubFieldBulletRegex.Match(trimmed);
+                if (subMatch.Success)
                 {
-                    Name = subMatch.Groups[1].Value,
-                    Description = subMatch.Groups[3].Value.Trim(),
-                    IsOptional = subMatch.Groups[2].Value.Contains("optional")
-                };
-                currentSubDesc.Add(subMatch.Groups[3].Value.Trim());
-                continue;
+                    inSubFields = true;
+                    CommitSubField();
+                    currentSubField = new FieldDefinition
+                    {
+                        Name = subMatch.Groups[1].Value,
+                        TypeHint = ExtractBaseTypeHint(subMatch.Groups[2].Value),
+                        Description = subMatch.Groups[3].Value.Trim(),
+                        IsOptional = subMatch.Groups[2].Value
+                            .Contains("optional", StringComparison.OrdinalIgnoreCase)
+                    };
+                    currentSubDesc.Add(subMatch.Groups[3].Value.Trim());
+                    continue;
+                }
             }
 
-            // Section headers reset context
-            if (SectionHeaderRegex.IsMatch(trimmed))
-            {
-                CommitField();
-                continue;
-            }
-
-            // Continuation line for description
-            if (!string.IsNullOrWhiteSpace(trimmed))
+            // Continuation line — appended to whichever scope is active.
+            if (!string.IsNullOrWhiteSpace(content))
             {
                 if (inSubFields && currentSubField is not null)
-                    currentSubDesc.Add(trimmed.TrimStart());
+                    currentSubDesc.Add(content);
                 else
-                    currentDesc.Add(trimmed.TrimStart());
+                    currentDesc.Add(content);
             }
         }
 
@@ -184,83 +213,18 @@ public static class CommonPyParser
         return fields;
     }
 
-    private static List<FieldDefinition> ParseFormatFields(string[] lines)
+    /// <summary>
+    /// From a raw annotation string like "optional, int" extracts just the base
+    /// type token ("int"), stripping "optional" and similar qualifiers.
+    /// </summary>
+    private static string ExtractBaseTypeHint(string raw)
     {
-        var fields = new List<FieldDefinition>();
-        bool inFormatSection = false;
-        bool inPotentialFields = false;
+        if (string.IsNullOrWhiteSpace(raw)) return string.Empty;
 
-        FieldDefinition? currentField = null;
-        var currentDesc = new List<string>();
+        // Strip "optional" and any surrounding spaces/commas.
+        var cleaned = Regex.Replace(raw, @"\boptional\b", "", RegexOptions.IgnoreCase)
+                           .Trim(' ', ',');
 
-        void CommitField()
-        {
-            if (currentField is null) return;
-            fields.Add(currentField with { Description = string.Join(" ", currentDesc).Trim() });
-            currentField = null;
-            currentDesc.Clear();
-        }
-
-        for (int i = 0; i < lines.Length; i++)
-        {
-            var line = lines[i].TrimEnd();
-
-            if (!inFormatSection && (line.Contains("format_dict") || line.Contains("formats:")))
-                inFormatSection = true;
-
-            if (!inFormatSection) continue;
-
-            if (line.Contains("Potential fields") || line.Contains("The following fields"))
-            {
-                inPotentialFields = true;
-                continue;
-            }
-
-            if (!inPotentialFields) continue;
-
-            // End of format section
-            if (line.TrimStart().StartsWith("subtitles:") || line.Contains("The following fields are extracted"))
-            {
-                CommitField();
-                break;
-            }
-
-            var subMatch = SubFieldRegex.Match(line);
-            if (subMatch.Success && line.TrimStart().StartsWith("*"))
-            {
-                CommitField();
-                currentField = new FieldDefinition
-                {
-                    Name = subMatch.Groups[1].Value,
-                    Description = subMatch.Groups[3].Value.Trim(),
-                    IsOptional = subMatch.Groups[2].Value.Contains("optional")
-                };
-                currentDesc.Add(subMatch.Groups[3].Value.Trim());
-                continue;
-            }
-
-            if (currentField is not null && !string.IsNullOrWhiteSpace(line))
-                currentDesc.Add(line.TrimStart());
-        }
-
-        CommitField();
-        return fields;
+        return cleaned.Trim();
     }
-
-    // Known top-level info_dict field names to seed detection
-    private static readonly HashSet<string> KnownInfoDictFields =
-    [
-        "id", "title", "formats", "url", "ext", "description", "thumbnail",
-        "thumbnails", "uploader", "upload_date", "timestamp", "duration",
-        "view_count", "like_count", "comment_count", "age_limit", "webpage_url",
-        "categories", "tags", "is_live", "was_live", "live_status", "chapters",
-        "subtitles", "automatic_captions", "series", "season", "episode",
-        "track", "album", "artist", "genre", "alt_title", "display_id",
-        "format_id", "format", "format_note", "player_url", "direct"
-    ];
-
-    private static bool IsInfoDictField(string name) =>
-        KnownInfoDictFields.Contains(name) || name.EndsWith("_count") ||
-        name.EndsWith("_id") || name.EndsWith("_url") || name.EndsWith("_date") ||
-        name.EndsWith("_number") || name.EndsWith("_timestamp");
 }
