@@ -21,9 +21,10 @@ public static class CommonPyParser
     //   * "url": description         (colon, used in subtitles section)
     //   * url        description     (two or more spaces, used in formats section)
     //   * width (optional, int) - …  (type annotation + dash)
-    // Groups: (1) name, (2) type annotation, (3) description
+    //   * width (optional, int)       (type annotation only, NO description or separator)
+    // Groups: (1) name, (2) type annotation, (3) description (may be empty)
     private static readonly Regex SubFieldBulletRegex = new(
-        @"^\s+\*\s+[""']?([a-z][a-z0-9_]*)[""']?\s*(?:\(([^)]*)\))?\s*(?:[-–:]\s*|\s{2,})(.+)?$",
+        @"^\s+\*\s+[""']?([a-z][a-z0-9_]*)[""']?\s*(?:\(([^)]*)\))?\s*(?:[-–:]\s*|\s{2,})?(.+)?$",
         RegexOptions.Compiled);
 
     // Lines that announce a new sub-section inside a field description.
